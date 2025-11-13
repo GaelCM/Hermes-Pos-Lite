@@ -1,0 +1,17 @@
+{
+    "appId": "com.electron.elamigos",
+    "icon": "./src/electron/logo.jpg",
+    "files": [
+        "dist-react/**/*",
+        "src/electron/**/*"
+    ],
+    "mac": {
+        "target": ["dmg"]
+    },
+    "win": {
+        "target": ["portable", "msi"]
+    },
+    "linux": {
+        "target": ["AppImage"]
+    }
+}

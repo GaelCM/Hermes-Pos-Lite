@@ -19,7 +19,7 @@ import DialiogErrorProducto from "./Dialogs/noEncontrado";
 export default function Home(){ 
 
     const [idProducto,setidProducto]=useState<string>();
-    const idSucursal=2;
+    const idSucursal=1;
     const [metodoPago,setMetodoPago]=useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
     const [isOpen,setIsOpen]=useState(false);

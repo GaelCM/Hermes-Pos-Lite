@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useListaProductos } from "@/contexts/listaProductos";
 import { CreditCard, Minus, Pill, Plus, Scan, ShoppingCart, Trash2, Users } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { Reloj } from "./components/reloj";
 import DialogConfirmVenta from "./components/dialogConfirmVenta";
@@ -15,6 +15,7 @@ import { useCliente } from "@/contexts/globalClient";
 import AddCliente from "@/components/dialogAddCliente";
 import { getProductoVenta } from "@/api/productosApi/productosApi";
 import DialiogErrorProducto from "./Dialogs/noEncontrado";
+import { useOutletContext } from "react-router";
 
 export default function Home(){ 
 
@@ -28,6 +29,8 @@ export default function Home(){
 
     const {carrito,clearCart,removeProduct,decrementQuantity,incrementQuantity,getTotalPrice,addProduct}=useListaProductos();
     const {cliente}=useCliente();
+    const { setFocusScanner } = useOutletContext<{ setFocusScanner: (fn: () => void) => void }>();
+
 
     useHotkeys('alt+m', () => {
     console.log("Atajo Alt+B presionado desde react-hotkeys-hook");
@@ -58,6 +61,12 @@ export default function Home(){
     }, [setIsOpen]); // El array de dependencias es opcional pero recomendado
 
 
+    const focusInput = () => {
+      setTimeout(() => {
+          inputRef?.current?.focus();
+        }, 100);  
+    };
+
    const buscarProducto=async(e: { preventDefault: () => void; })=>{
       e.preventDefault()
       if(idProducto){
@@ -75,6 +84,11 @@ export default function Home(){
       }
      
     }
+
+    // LE PASAS EL CALLBACK AL LAYOUT
+    useEffect(() => {
+        setFocusScanner(() => focusInput);
+    }, [setFocusScanner]);
 
     return(
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6 h-full">

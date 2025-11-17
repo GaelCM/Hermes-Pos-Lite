@@ -44,10 +44,8 @@ export type ProductoVentaResponse={
 }
 
 
-// Tipo para el formulario de creación/edición de productos usado en el cliente
 export interface PrecioPresentacion {
     id_precio?: number;
-    id_sucursal?: number;
     id_unidad_venta?: number;
     precio_venta: number;
 }
@@ -65,6 +63,8 @@ export interface ProductoForm {
     id_categoria: number;
     precio_costo: number;
     sku_pieza?: string;
+    stock:number;
+    stock_minimo:number;
     presentaciones: PresentacionForm[];
-    sucursales_seleccionadas: number[];
+    sucursales_con_inventario: number[]; // <-- CAMBIO: Renombrado para coincidir con el form
 }

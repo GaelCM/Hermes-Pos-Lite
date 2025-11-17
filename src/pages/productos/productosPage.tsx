@@ -142,7 +142,7 @@ export default function ProductosPage() {
         {/* Footer con información */}
         <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-sm text-blue-800">
-            💡 <strong>Tip:</strong> Al seleccionar una sucursal, podrás gestionar productos, precios y stock específicos de esa ubicación.
+            <strong>Tip:</strong> Al seleccionar una sucursal, podrás gestionar productos, precios y stock específicos de esa ubicación.
           </p>
         </div>
       </div>

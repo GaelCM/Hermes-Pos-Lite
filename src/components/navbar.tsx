@@ -1,10 +1,12 @@
 import { Calendar, ChevronDown,FileText, Menu, Package, Search,  TrendingUp, Users, Wifi } from "lucide-react";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 
 import { Outlet, useNavigate } from "react-router";
 import { useCurrentUser } from "@/contexts/currentUser";
+import { useHotkeys } from "react-hotkeys-hook";
+import { useState } from "react";
+import DialogProducto from "./dialogProductos";
 
 type navBarProps={
     sidebarOpen:boolean,
@@ -13,7 +15,22 @@ type navBarProps={
 
 export default function NavBar({setSidebarOpen}:navBarProps){ 
     const {user}=useCurrentUser();
-    const navigate=useNavigate();   
+    const navigate=useNavigate();
+    const [openP,setOpenP]=useState(false);
+    const [focusScanner, setFocusScanner] = useState<() => void>(() => {});
+    
+    useHotkeys('alt+F11', () => {
+        console.log("Atajo Alt+F11 presionado desde react-hotkeys-hook");
+        setOpenP(true)
+        },{
+            enableOnFormTags:true
+        }, [setOpenP]); // El array de dependencias es opcional pero recomendado
+    
+
+    const openDialog=()=>{
+      setOpenP(true)
+      
+    }
 
     return(
         <>
@@ -39,11 +56,8 @@ export default function NavBar({setSidebarOpen}:navBarProps){
 
             <div className="flex items-center gap-2 lg:gap-4">
               <div className="relative hidden sm:block">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  placeholder="Buscar medicamento..."
-                  className="pl-10 w-40 lg:w-64"
-                />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" color="white" />
+                <Button variant={"default"} className="px-10 cursor-pointer" onClick={openDialog}>Buscar Producto (alt+f11)</Button>
               </div>
 
               <div className="flex items-center gap-2">
@@ -113,21 +127,24 @@ export default function NavBar({setSidebarOpen}:navBarProps){
 
           <div className="mt-3 sm:hidden">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Buscar medicamento..."
-                className="pl-10 w-full"
-              />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" color="white" />
+                <Button variant={"default"} className="px-10 cursor-pointer">Buscar Producto (alt+f11)</Button>
             </div>
           </div>
         </header>
 
         {/* Content Area */}
         <main className="flex-1 bg-card overflow-auto">
-          <Outlet></Outlet>
+          <Outlet context={{setFocusScanner}}></Outlet>
         </main>
+       
 
       </div>
+
+      <DialogProducto isOpen={openP} setIsOpen={(open) => {
+        setOpenP(open);
+        if (!open) focusScanner(); // 👈 AQUI
+        }} idSucursal={user.id_sucursal}></DialogProducto>
         </>
     )
 }

@@ -25,6 +25,7 @@ export default function Sidebar({setSidebarOpen,sidebarOpen}:sideBarProps){
   
 
             // Mapear iconos string a componentes
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const iconMap: Record<string, any> = {
                 Home,
                 Pill,

@@ -1,257 +1,309 @@
-/* eslint-disable react-hooks/rules-of-hooks */
-import { useNavigate } from "react-router";
-import { useCurrentUser } from "@/contexts/currentUser";
-import { useEffect, useState } from "react";
-import z from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useFieldArray } from "react-hook-form";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
-import { Trash2, Plus } from "lucide-react";
-import type { Sucursal } from "@/types/Sucursal";
-import { obtenerSucursalesApi } from "@/api/sucursalApi/sucursalApi";
-import { insertarProductoApi } from "@/api/productosApi/productosApi";
-import { toast } from "sonner";
 
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Plus, Trash2, ChevronRight, ChevronLeft, Check } from 'lucide-react';
 
-
-
-// ==================== SCHEMA DE VALIDACIÓN ====================
-const presentacionSchema = z.object({
-  nombre_presentacion: z
-    .string()
-    .min(1, "El nombre es requerido")
-    .max(100, "Máximo 100 caracteres"),
-  factor_conversion_cantidad: z
-    .number()
-    .int("Debe ser un número entero")
-    .positive("Debe ser mayor a 0")
-    .min(1, "Mínimo 1"),
-  sku_presentacion: z.string().max(50, "Máximo 50 caracteres").optional(),
-});
-
-const precioSucursalSchema = z.object({
-  id_sucursal: z.number(),
-  precio_venta: z
-    .number()
-    .positive("El precio debe ser mayor a 0")
-    .min(0.01, "Precio mínimo $0.01"),
-});
-
-const presentacionConPreciosSchema = presentacionSchema.extend({
-  precios: z
-    .array(precioSucursalSchema)
-    .min(1, "Debe asignar al menos una sucursal"),
-});
-
+// Schema de validación con Zod
 const formSchema = z.object({
-  // SECCIÓN 1: Datos del Producto
-  nombre_producto: z
-    .string()
-    .min(1, "El nombre es requerido")
-    .max(200, "Máximo 200 caracteres"),
-  sku_pieza: z.string().max(50, "Máximo 50 caracteres").optional(),
-  descripcion: z.string().max(500, "Máximo 500 caracteres").optional(),
-  id_categoria: z.number().min(1, "La categoría es requerida"),
-  precio_costo: z
-    .number()
-    .positive("El precio debe ser mayor a 0")
-    .min(0.01, "Precio mínimo $0.01"),
-
-  // SECCIÓN 2: sucursales seleccionadas
-  sucursales_seleccionadas: z
-    .array(z.number())
-    .min(1, "Debe seleccionar al menos una sucursal"),
-
-  // SECCIÓN 3: Presentaciones con sus precios
-  presentaciones: z
-    .array(presentacionConPreciosSchema)
-    .min(1, "Debe agregar al menos una presentación"),
+  nombre_producto: z.string().min(1, 'El nombre del producto es requerido'),
+  descripcion: z.string().optional(),
+  id_categoria: z.string().optional(),
+  precio_costo: z.string().refine(
+    (val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0,
+    'El precio de costo debe ser mayor a 0'
+  ),
+  sku_pieza: z.string().optional(),
+  sucursales_inventario: z.array(z.number()).min(1, 'Selecciona al menos una sucursal'),
+  variantes: z.array(
+    z.object({
+      nombre_presentacion: z.string().min(1, 'El nombre es requerido'),
+      factor_conversion_cantidad: z.number().positive('El factor debe ser mayor a 0'),
+      sku_presentacion: z.string().optional(),
+      sucursales_venta: z.array(
+        z.object({
+          id_sucursal: z.number(),
+          precio_venta: z.string().refine(
+            (val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0,
+            'El precio debe ser mayor a 0'
+          )
+        })
+      ).min(1, 'Asigna al menos una sucursal a esta variante')
+    })
+  ).min(1)
 });
 
-export type NuevoProductoFormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof formSchema>;
 
+export default function ProductForm(){
 
+  const [currentStep, setCurrentStep] = useState(1);
+  const [sucursales] = useState([
+    { id_sucursal: 1, nombre: 'Sucursal Central' },
+    { id_sucursal: 2, nombre: 'Sucursal Xoxo' },
+    { id_sucursal: 3, nombre: 'Sucursal Test' }
+  ]);
+  const [categorias] = useState([
+    { id_categoria: 1, category_name: 'Bebidas' }
+  ]);
 
-export default function NuevoProductoForm(){
-
-    const CATEGORIAS = [
-  { id_categoria: 1, nombre: "Bebidas" },
-  { id_categoria: 2, nombre: "Botanas" },
-  { id_categoria: 3, nombre: "Lácteos" },
-  { id_categoria: 4, nombre: "Abarrotes" },
-    ];
-
-  
-
-    const [sucursales,setSucursales]=useState<Sucursal[]>([])
-    const [loading,setLoading]=useState<boolean>(false);
-    const [send,setSend]=useState(false);
-    const [error,setError]=useState<string|null>(null);
-     const {user}=useCurrentUser();
-     const navigate=useNavigate();
-
-    useEffect(()=>{
-        if (user.id_rol === 2) {
-            navigate(`/`);
-            return;
-        }
-
-        obtenerSucursalesApi().then(res=>{setSucursales(res.data)}).catch(err=>{setError(err)}).finally(()=>setLoading(false))
-            
-    },[navigate,user.id_rol])
-    
-    if (loading) {
-        return (
-        <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
-            <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-slate-600">Cargando sucursales...</p>
-            </div>
-        </div>
-        );
-    }
-
-    if(error){
-            return(
-                <div>
-                    <h1>Error al encontrar el id</h1>
-                </div>
-            )
-    }
-    
-    const form = useForm<NuevoProductoFormValues>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      nombre_producto: "",
-      sku_pieza: "",
-      descripcion: "",
-      precio_costo: 0,
-      sucursales_seleccionadas: [],
-      presentaciones: [
+      nombre_producto: '',
+      descripcion: '',
+      id_categoria: '',
+      precio_costo: '',
+      sku_pieza: '',
+      sucursales_inventario: [],
+      variantes: [
         {
-          nombre_presentacion: "Pieza",
+          nombre_presentacion: 'Pieza',
           factor_conversion_cantidad: 1,
-          sku_presentacion: "",
-          precios: [],
-        },
-      ],
-    },
-    });
+          sku_presentacion: '',
+          sucursales_venta: []
+        }
+      ]
+    }
+  });
 
-    const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "presentaciones",
-    });
+  const { watch } = form;
+  const variantes = watch('variantes');
+  const sucursalesInventario = watch('sucursales_inventario');
 
-    const sucursalesSeleccionadas = form.watch("sucursales_seleccionadas");
+  const onSubmit = (values: FormValues) => {
+    console.log('Datos del formulario:', values);
+    alert('¡Producto creado exitosamente! Revisa la consola.');
+  };
 
-  // Sincronizar precios cuando cambian las sucursales seleccionadas
-  const handleSucursalChange = (sucursalId: number, checked: boolean) => {
-    const current = form.getValues("sucursales_seleccionadas");
-    const presentaciones = form.getValues("presentaciones");
+  const handleNext = async () => {
+  let isValid = false;
+  
+  if (currentStep === 1) {
+    isValid = await form.trigger(['nombre_producto', 'precio_costo']);
+  } else if (currentStep === 2) {
+    isValid = await form.trigger(['sucursales_inventario']);
+  } else if (currentStep === 3) {
+    // En paso 3 solo validamos nombre y factor de cada variante
+    const variantesActuales = form.getValues('variantes');
+    const promesas = variantesActuales.flatMap((_, index) => [
+      form.trigger(`variantes.${index}.nombre_presentacion`),
+      form.trigger(`variantes.${index}.factor_conversion_cantidad`)
+    ]);
+    const resultados = await Promise.all(promesas);
+    isValid = resultados.every(r => r);
+  } else if (currentStep === 4) {
+    isValid = await form.trigger(['variantes']);
+  }
+  
+  if (isValid) setCurrentStep(currentStep + 1);
+  };
 
-    if (checked) {
-      form.setValue("sucursales_seleccionadas", [...current, sucursalId]);
+  const addVariante = () => {
+    const current = form.getValues('variantes');
+    form.setValue('variantes', [
+      ...current,
+      {
+        nombre_presentacion: '',
+        factor_conversion_cantidad: 1,
+        sku_presentacion: '',
+        sucursales_venta: []
+      }
+    ]);
+  };
 
-      // Agregar precio para esta sucursal en todas las presentaciones
-      presentaciones.forEach((_, idx) => {
-        const preciosActuales = form.getValues(`presentaciones.${idx}.precios`);
-        form.setValue(`presentaciones.${idx}.precios`, [
-          ...preciosActuales,
-          { id_sucursal: sucursalId, precio_venta: 0 },
-        ]);
-      });
+  const removeVariante = (index: number) => {
+    const current = form.getValues('variantes');
+    if (current.length > 1) {
+      form.setValue('variantes', current.filter((_, i) => i !== index));
+    }
+  };
+
+  const toggleSucursalVenta = (varianteIndex: number, idSucursal: number) => {
+    const current = form.getValues(`variantes.${varianteIndex}.sucursales_venta`);
+    const existe = current.find(sv => sv.id_sucursal === idSucursal);
+    
+    if (existe) {
+      form.setValue(
+        `variantes.${varianteIndex}.sucursales_venta`,
+        current.filter(sv => sv.id_sucursal !== idSucursal)
+      );
     } else {
       form.setValue(
-        "sucursales_seleccionadas",
-        current.filter((id) => id !== sucursalId)
+        `variantes.${varianteIndex}.sucursales_venta`,
+        [...current, { id_sucursal: idSucursal, precio_venta: '' }]
       );
-
-      // Remover precios de esta sucursal en todas las presentaciones
-      presentaciones.forEach((_, idx) => {
-        const preciosActuales = form.getValues(`presentaciones.${idx}.precios`);
-        form.setValue(
-          `presentaciones.${idx}.precios`,
-          preciosActuales.filter((p) => p.id_sucursal !== sucursalId)
-        );
-      });
     }
-    };
+  };
 
-    const agregarPresentacion = () => {
-        append({
-            nombre_presentacion: "",
-            factor_conversion_cantidad: 1,
-            sku_presentacion: "",
-            precios: sucursalesSeleccionadas.map((id) => ({
-                id_sucursal: id,
-                precio_venta: 0,
-            })),
-        });
-    };
+  const renderStep1 = () => (
+    <div className="space-y-4">
+      <FormField
+        control={form.control}
+        name="nombre_producto"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Nombre del Producto *</FormLabel>
+            <FormControl>
+              <Input placeholder="Ej: Coca Cola 500ml" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
-    const onSubmit = async(values: NuevoProductoFormValues) => {
-        setSend(true)
-        console.log("Datos del formulario:", values);
-        const res=await insertarProductoApi(values)
-        if(res.success){
-          toast.success(res.message)
-          setSend(false)
-          navigate("/productos")
-        }else{
-          toast.error(res.message)
-          setSend(false)
-        }
-    };
+      <FormField
+        control={form.control}
+        name="descripcion"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Descripción</FormLabel>
+            <FormControl>
+              <Textarea placeholder="Descripción del producto" rows={3} {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
-    return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 px-10">
-        {/* ==================== SECCIÓN 1: DATOS DEL PRODUCTO ==================== */}
-        <Card>
-          <CardHeader>
-            <CardTitle>1. Información del Producto</CardTitle>
-            <CardDescription>
-              Datos generales del producto base
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4">
+        <FormField
+          control={form.control}
+          name="id_categoria"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Categoría</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {categorias.map(cat => (
+                    <SelectItem key={cat.id_categoria} value={String(cat.id_categoria)}>
+                      {cat.category_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="precio_costo"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Precio de Costo Por Pieza *</FormLabel>
+              <FormControl>
+                <Input type="number" step="0.01" placeholder="0.00" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+
+      <FormField
+        control={form.control}
+        name="sku_pieza"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>SKU Pieza</FormLabel>
+            <FormControl>
+              <Input placeholder="SKU-001" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
+  );
+
+  const renderStep2 = () => (
+    <div className="space-y-4">
+      <Alert>
+        <AlertDescription>
+          Selecciona las sucursales donde se guardará el inventario
+        </AlertDescription>
+      </Alert>
+
+      <FormField
+        control={form.control}
+        name="sucursales_inventario"
+        render={({ field }) => (
+          <FormItem>
+            <div className="space-y-3">
+              {sucursales.map(sucursal => (
+                <div key={sucursal.id_sucursal} className="flex items-center space-x-2 p-3 border rounded-lg">
+                  <Checkbox
+                    checked={field.value?.includes(sucursal.id_sucursal)}
+                    onCheckedChange={(checked) => {
+                      const current = field.value || [];
+                      if (checked) {
+                        field.onChange([...current, sucursal.id_sucursal]);
+                      } else {
+                        field.onChange(current.filter(id => id !== sucursal.id_sucursal));
+                      }
+                    }}
+                  />
+                  <FormLabel className="cursor-pointer font-normal">
+                    {sucursal.nombre}
+                  </FormLabel>
+                </div>
+              ))}
+            </div>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
+  );
+
+  const renderStep3 = () => (
+    <div className="space-y-4">
+      <Alert>
+        <AlertDescription>
+          Define las variantes. Por defecto incluye "Pieza" con factor 1.
+        </AlertDescription>
+      </Alert>
+
+      {variantes.map((variante, index) => (
+        <Card key={index} className="relative">
+          <CardContent className="pt-6 space-y-4">
+            {index > 0 && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute top-2 right-2"
+                onClick={() => removeVariante(index)}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="nombre_producto"
+                name={`variantes.${index}.nombre_presentacion`}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nombre del Producto *</FormLabel>
+                    <FormLabel>Nombre *</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ej: Coca Cola 600ml" {...field} />
+                      <Input placeholder="Paquete, Caja" {...field} disabled={index === 0} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -260,16 +312,18 @@ export default function NuevoProductoForm(){
 
               <FormField
                 control={form.control}
-                name="sku_pieza"
+                name={`variantes.${index}.factor_conversion_cantidad`}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>SKU Pieza</FormLabel>
+                    <FormLabel>Factor *</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ej: BEB001" {...field} />
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                        disabled={index === 0}
+                      />
                     </FormControl>
-                    <FormDescription>
-                      Código único del producto
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -278,320 +332,178 @@ export default function NuevoProductoForm(){
 
             <FormField
               control={form.control}
-              name="descripcion"
+              name={`variantes.${index}.sku_presentacion`}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descripción</FormLabel>
+                  <FormLabel>SKU</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Descripción del producto..."
-                      className="resize-none"
-                      {...field}
-                    />
+                    <Input placeholder="SKU-PRES-001" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="id_categoria"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Categoría *</FormLabel>
-                    <Select
-                      onValueChange={(value) => field.onChange(Number(value))}
-                      value={field.value?.toString()}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona una categoría" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {CATEGORIAS.map((cat) => (
-                          <SelectItem
-                            key={cat.id_categoria}
-                            value={cat.id_categoria.toString()}
-                          >
-                            {cat.nombre}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="precio_costo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Precio de Costo (por pieza) *</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        {...field}
-                        onChange={(e) =>
-                          field.onChange(parseFloat(e.target.value))
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
           </CardContent>
         </Card>
+      ))}
 
-        {/* ==================== SECCIÓN 2: sucursales ==================== */}
-        <Card>
-          <CardHeader>
-            <CardTitle>2. sucursales</CardTitle>
-            <CardDescription>
-              Selecciona en qué sucursales estará disponible este producto
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <FormField
-              control={form.control}
-              name="sucursales_seleccionadas"
-              render={() => (
-                <FormItem>
-                  <div className="space-y-3">
-                    {sucursales.map((sucursal) => (
-                      <FormField
-                        key={sucursal.id_sucursal}
-                        control={form.control}
-                        name="sucursales_seleccionadas"
-                        render={({ field }) => {
-                          return (
-                            <FormItem
-                              key={sucursal.id_sucursal}
-                              className="flex flex-row items-start space-x-3 space-y-0"
-                            >
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value?.includes(
-                                    sucursal.id_sucursal
-                                  )}
-                                  onCheckedChange={(checked) =>
-                                    handleSucursalChange(
-                                      sucursal.id_sucursal,
-                                      checked as boolean
-                                    )
-                                  }
-                                />
-                              </FormControl>
-                              <FormLabel className="font-normal">
-                                {sucursal.nombre}
-                              </FormLabel>
-                            </FormItem>
-                          );
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
-
-        {/* ==================== SECCIÓN 3: PRESENTACIONES Y PRECIOS ==================== */}
-        <Card>
-          <CardHeader>
-            <CardTitle>3. Presentaciones y Precios</CardTitle>
-            <CardDescription>
-              Define las diferentes presentaciones del producto y sus precios
-              por sucursal
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {sucursalesSeleccionadas.length === 0 && (
-              <div className="text-sm text-muted-foreground bg-muted p-4 rounded-md">
-                ⚠️ Primero selecciona al menos una sucursal para poder asignar
-                precios
-              </div>
-            )}
-
-            {fields.map((field, index) => (
-              <Card key={field.id} className="border-2">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">
-                      Presentación {index + 1}
-                    </CardTitle>
-                    {index > 0 && (
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => remove(index)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Eliminar
-                      </Button>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField
-                      control={form.control}
-                      name={`presentaciones.${index}.nombre_presentacion`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nombre *</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Ej: Paquete, Caja"
-                              {...field}
-                              disabled={index === 0}
-                            />
-                          </FormControl>
-                          {index === 0 && (
-                            <FormDescription className="text-xs">
-                              Presentación base (pieza)
-                            </FormDescription>
-                          )}
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`presentaciones.${index}.factor_conversion_cantidad`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Cantidad de piezas *</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min="1"
-                              {...field}
-                              onChange={(e) =>
-                                field.onChange(parseInt(e.target.value))
-                              }
-                              disabled={index === 0}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`presentaciones.${index}.sku_presentacion`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>SKU Presentación</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Ej: BEB001-PQ" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {sucursalesSeleccionadas.length > 0 && (
-                    <>
-                      <Separator />
-                      <div>
-                        <h4 className="text-sm font-medium mb-3">
-                          Precios por Sucursal
-                        </h4>
-                        <div className="space-y-3">
-                          {sucursalesSeleccionadas.map((sucursalId, pIdx) => {
-                            const sucursal = sucursales.find(
-                              (s) => s.id_sucursal === sucursalId
-                            );
-                            return (
-                              <FormField
-                                key={`${index}-${sucursalId}`}
-                                control={form.control}
-                                name={`presentaciones.${index}.precios.${pIdx}.precio_venta`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <div className="flex items-center gap-4">
-                                      <FormLabel className="w-40 text-sm">
-                                        {sucursal?.nombre}
-                                      </FormLabel>
-                                      <FormControl>
-                                        <Input
-                                          type="number"
-                                          step="0.01"
-                                          placeholder="0.00"
-                                          className="max-w-xs"
-                                          {...field}
-                                          onChange={(e) =>
-                                            field.onChange(
-                                              parseFloat(e.target.value)
-                                            )
-                                          }
-                                        />
-                                      </FormControl>
-                                      {form.getValues(
-                                        `presentaciones.${index}.factor_conversion_cantidad`
-                                      ) > 1 && (
-                                        <span className="text-sm text-muted-foreground">
-                                          $
-                                          {(
-                                            field.value /
-                                            form.getValues(
-                                              `presentaciones.${index}.factor_conversion_cantidad`
-                                            )
-                                          ).toFixed(2)}{" "}
-                                          por pieza
-                                        </span>
-                                      )}
-                                    </div>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-
-            <Button
-              type="button"
-              variant="outline"
-              onClick={agregarPresentacion}
-              disabled={sucursalesSeleccionadas.length === 0}
-              className="w-full"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Agregar otra presentación
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* ==================== BOTONES DE ACCIÓN ==================== */}
-        <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline">
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={send}>Guardar Producto</Button>
-        </div>
-      </form>
-    </Form>
+      <Button type="button" variant="outline" className="w-full" onClick={addVariante}>
+        <Plus className="w-4 h-4 mr-2" />
+        Agregar Variante
+        </Button>
+    </div>
   );
-}
+
+  const renderStep4 = () => (
+  <div className="space-y-6">
+    <Alert>
+      <AlertDescription>
+        Asigna precios de venta para cada variante
+      </AlertDescription>
+    </Alert>
+
+    {variantes.map((variante, vIndex) => (
+      <Card key={vIndex}>
+        <CardHeader>
+          <CardTitle className="text-lg">
+            {variante.nombre_presentacion}
+            <span className="text-sm font-normal text-gray-500 ml-2">
+              (Factor: {variante.factor_conversion_cantidad})
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {sucursales
+            .filter(s => sucursalesInventario?.includes(s.id_sucursal)) // Agregar ?
+            .map(sucursal => {
+              const sucursalVenta = variante.sucursales_venta.find(
+                sv => sv.id_sucursal === sucursal.id_sucursal
+              );
+              const isSelected = !!sucursalVenta;
+              const svIndex = variante.sucursales_venta.findIndex(
+                sv => sv.id_sucursal === sucursal.id_sucursal
+              );
+
+              return (
+                <div key={sucursal.id_sucursal} className="border rounded-lg p-4 space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={() => toggleSucursalVenta(vIndex, sucursal.id_sucursal)}
+                    />
+                    <FormLabel className="cursor-pointer font-medium">
+                      {sucursal.nombre}
+                    </FormLabel>
+                  </div>
+
+                  {isSelected && svIndex !== -1 && (
+                    <FormField
+                      control={form.control}
+                      name={`variantes.${vIndex}.sucursales_venta.${svIndex}.precio_venta`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Precio de Venta *</FormLabel>
+                          <FormControl>
+                            <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </div>
+              );
+            })}
+
+          <FormField
+            control={form.control}
+            name={`variantes.${vIndex}.sucursales_venta`}
+            render={() => (
+              <FormItem>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </CardContent>
+      </Card>
+    ))}
+  </div>
+   );
+
+  const steps = [
+    { number: 1, title: 'Producto Base', component: renderStep1() },
+    { number: 2, title: 'Inventario', component: renderStep2() },
+    { number: 3, title: 'Variantes', component: renderStep3() },
+    { number: 4, title: 'Precios', component: renderStep4() }
+  ];
+
+  return (
+    <div className="mx-auto p-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Crear Nuevo Producto</CardTitle>
+          <CardDescription>
+            Formulario paso a paso para crear productos con variantes
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              {steps.map((step, index) => (
+                <React.Fragment key={step.number}>
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
+                        currentStep > step.number
+                          ? 'bg-green-500 text-white'
+                          : currentStep === step.number
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-200 text-gray-500'
+                      }`}
+                    >
+                      {currentStep > step.number ? <Check className="w-5 h-5" /> : step.number}
+                    </div>
+                    <span className="text-xs mt-2 text-center">{step.title}</span>
+                  </div>
+                  {index < steps.length - 1 && <div className="flex-1 h-0.5 bg-gray-200 mx-2" />}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+
+          <Form {...form}>
+            <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
+              <div className="min-h-[400px]">
+                {steps[currentStep - 1].component}
+              </div>
+
+              <div className="flex justify-between">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setCurrentStep(currentStep - 1)}
+                  disabled={currentStep === 1}
+                >
+                  <ChevronLeft className="w-4 h-4 mr-2" />
+                  Anterior
+                </Button>
+
+                {currentStep < 4 ? (
+                  <Button type="button" onClick={handleNext}>
+                    Siguiente
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </Button>
+                ) : (
+                  <Button type="submit" onClick={form.handleSubmit(onSubmit)} className="bg-green-600 hover:bg-green-700">
+                    <Check className="w-4 h-4 mr-2" />
+                    Crear Producto
+                  </Button>
+                )}
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};

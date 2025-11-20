@@ -1,4 +1,4 @@
-import type {  ProductoEspecialInput, ProductoFormFinal, ProductoVentaResponse } from "@/types/Producto";
+import type {  ProductoEspecialInput, ProductoFormFinal, ProductoGeneralResponse, ProductoVentaResponse } from "@/types/Producto";
 
 
 export const getProductoVenta=async(sku:string,idSucursal:number)=>{
@@ -32,6 +32,28 @@ export const insertarProductoEspecialApi=async(formData:ProductoEspecialInput)=>
             'Content-Type':'application/json'
         },
         body:JSON.stringify({formData})
+    });
+    const data=await res.json();
+    return data as {success:boolean,message:string, data: number|null};
+}
+
+export const obtenerProductoGeneral=async(idProducto:number)=>{
+    const res=await fetch(`http://localhost:3000/api/productos/edit/${idProducto}`);
+    const data=await res.json();
+    return data as ProductoGeneralResponse;
+}
+
+
+export const actualizarProductoApi=async(id_producto:number,formData:ProductoFormFinal)=>{
+    const res=await fetch(`http://localhost:3000/api/productos/editarProducto`,{
+        method:"post",
+        headers:{
+            'Content-Type':'application/json'
+        },
+        body:JSON.stringify({
+            idProducto:id_producto,
+            formData
+        })
     });
     const data=await res.json();
     return data as {success:boolean,message:string, data: number|null};

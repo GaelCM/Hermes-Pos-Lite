@@ -1,23 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Check, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
-import React from "react";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { actualizarProductoApi, obtenerProductoGeneral } from "@/api/productosApi/productosApi";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { insertarProductoApi } from "@/api/productosApi/productosApi";
-import { Link, useNavigate } from "react-router";
-import { toast } from "sonner";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import type { ProductoFormFinal } from "@/types/Producto";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowLeft, Check, ChevronLeft, ChevronRight, Loader2, Plus, Trash2 } from "lucide-react";
+import React from "react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import {useSearchParams } from "react-router";
+import { toast } from "sonner";
+import { z } from "zod";
+
 
 const formSchema = z.object({
   nombre_producto: z.string().min(1, 'El nombre del producto es requerido'),
@@ -32,11 +32,13 @@ const formSchema = z.object({
   })).min(1, 'Selecciona al menos una sucursal para el inventario'),
   variantes: z.array(
     z.object({
+      id_unidad_venta: z.number().optional(), // ID para actualizar
       nombre_presentacion: z.string().min(1, 'El nombre es requerido'),
       factor_conversion_cantidad: z.number().positive('El factor debe ser mayor a 0'),
       sku_presentacion: z.string().optional(),
       sucursales_venta: z.array(
         z.object({
+          id_precio: z.number().optional(), // ID para actualizar
           id_sucursal: z.number(),
           precio_venta: z.coerce.number().positive({ message: 'El precio de venta debe ser mayor a 0' })
         })
@@ -45,14 +47,16 @@ const formSchema = z.object({
   ).min(1, 'Debes agregar al menos una presentación')
 });
 
-// El tipo se genera automáticamente con los campos numéricos correctos
 type FormValues = z.infer<typeof formSchema>;
 
 
-export default function NuevoProductoForm() {
-
+export default function EditarProductoForm() {
+  const [searchParams] = useSearchParams();
+  const id_producto = searchParams.get("id");
   const [currentStep, setCurrentStep] = useState(1);
-  const navigate=useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
+
   const [sucursales] = useState([
     { id_sucursal: 1, nombre: 'Sucursal Central' },
     { id_sucursal: 2, nombre: 'Sucursal Xoxo' },
@@ -63,8 +67,6 @@ export default function NuevoProductoForm() {
     { id_categoria: 1, category_name: 'Bebidas' }
   ]);
 
-  const [creating, setCreating] = useState(false);
-
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -74,36 +76,59 @@ export default function NuevoProductoForm() {
       precio_costo: 0,
       sku_pieza: '',
       sucursales_inventario: [],
-      variantes: [
-        {
-          nombre_presentacion: 'Pieza',
-          factor_conversion_cantidad: 1,
-          sku_presentacion: '',
-          sucursales_venta: []
-        }
-      ]
+      variantes: []
     }
   });
 
   const { watch } = form;
-
   const variantes = watch("variantes");
-  const sucursalesInventario = watch("sucursales_inventario")||[];
+  const sucursalesInventario = watch("sucursales_inventario") || [];
   const sucursalesInventarioIds = (sucursalesInventario as any[]).map((s) => s.id_sucursal);
 
-  /* ---------------------- ON SUBMIT ----------------------- */
+  // Cargar datos del producto
+  useEffect(() => {
+    if (!id_producto) return;
+    
+    const cargarProducto = async () => {
+      try {
+        setLoading(true);
+        
+        const data=await obtenerProductoGeneral(parseInt(id_producto));
+
+        // Si el backend devuelve sucursales_inventario como number[] (ids), mapear a objetos con cantidades por defecto
+        const payload = { ...data.data } as any;
+        if (payload.sucursales_inventario && payload.sucursales_inventario.length > 0 && typeof payload.sucursales_inventario[0] === 'number') {
+          payload.sucursales_inventario = payload.sucursales_inventario.map((id: number) => ({ id_sucursal: id, cantidad_actual: 0, cantidad_minima: 0 }));
+        }
+
+        form.reset(payload);
+        setLoading(false);
+      } catch (error) {
+        toast.error('Error al cargar el producto');
+        console.error(error);
+        setLoading(false);
+      }
+    };
+
+    cargarProducto();
+  }, [id_producto, form]);
+
+
   const onSubmit = async (values: FormValues) => {
-    console.log(values);
-    setCreating(true);
-    const res=await insertarProductoApi(values as ProductoFormFinal)
-    if(res.success){
-      toast.success('Producto creado con éxito');
-      form.reset();
-      setCreating(false);
-      navigate('/productos');
-    }else{
-      toast.error('Error al crear el producto: '+res.message);
-      setCreating(false);
+    setUpdating(true);
+    try {
+      const data=await actualizarProductoApi(parseInt(id_producto!),values as ProductoFormFinal);
+      if(data.success){
+        toast.success(data.message);
+        window.history.back();
+      }else{
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error('Error al actualizar el producto');
+      console.error(error);
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -150,6 +175,11 @@ export default function NuevoProductoForm() {
   const removeVariante = (index: number) => {
     const curr = form.getValues("variantes");
     if (curr.length > 1) {
+      const varianteAEliminar = curr[index];
+      if (varianteAEliminar.id_unidad_venta) {
+        console.log('Marcar para eliminar:', varianteAEliminar.id_unidad_venta);
+      }
+      
       form.setValue(
         "variantes",
         curr.filter((_, i) => i !== index)
@@ -160,10 +190,13 @@ export default function NuevoProductoForm() {
   /* ----------------- TOGGLE SUCURSAL VENTA -------------------- */
   const toggleSucursalVenta = (varIndex: number, idSucursal: number) => {
     const curr = form.getValues(`variantes.${varIndex}.sucursales_venta`);
-
     const exists = curr.find(s => s.id_sucursal === idSucursal);
 
     if (exists) {
+      if (exists.id_precio) {
+        console.log('Marcar precio para eliminar:', exists.id_precio);
+      }
+      
       form.setValue(
         `variantes.${varIndex}.sucursales_venta`,
         curr.filter(s => s.id_sucursal !== idSucursal)
@@ -190,7 +223,6 @@ export default function NuevoProductoForm() {
   /* ----------------------- STEP 1 --------------------------- */
   const renderStep1 = () => (
     <div className="space-y-4">
-
       <FormField
         control={form.control}
         name="nombre_producto"
@@ -268,6 +300,8 @@ export default function NuevoProductoForm() {
         />
       </div>
 
+     
+
       <FormField
         control={form.control}
         name="sku_pieza"
@@ -281,14 +315,12 @@ export default function NuevoProductoForm() {
           </FormItem>
         )}
       />
-
     </div>
   );
 
   /* ----------------------- STEP 2 --------------------------- */
   const renderStep2 = () => (
     <div className="space-y-4">
-
       <Alert>
         <AlertDescription>
           Selecciona las sucursales donde se guardará inventario y define cantidades.
@@ -354,7 +386,6 @@ export default function NuevoProductoForm() {
           </FormItem>
         )}
       />
-
     </div>
   );
 
@@ -368,9 +399,8 @@ export default function NuevoProductoForm() {
       </Alert>
 
       {variantes.map((v, index) => (
-        <Card key={index}>
+        <Card key={index} className="relative">
           <CardContent className="pt-6 space-y-4">
-
             {index > 0 && (
               <Button
                 variant="ghost"
@@ -383,7 +413,6 @@ export default function NuevoProductoForm() {
             )}
 
             <div className="grid grid-cols-2 gap-4">
-
               <FormField
                 control={form.control}
                 name={`variantes.${index}.nombre_presentacion`}
@@ -416,7 +445,6 @@ export default function NuevoProductoForm() {
                   </FormItem>
                 )}
               />
-
             </div>
 
             <FormField
@@ -432,7 +460,6 @@ export default function NuevoProductoForm() {
                 </FormItem>
               )}
             />
-
           </CardContent>
         </Card>
       ))}
@@ -440,17 +467,15 @@ export default function NuevoProductoForm() {
       <Button type="button" variant="outline" onClick={addVariante} className="w-full">
         <Plus className="w-4 h-4 mr-2" /> Agregar Variante
       </Button>
-
     </div>
   );
 
   /* ----------------------- STEP 4 --------------------------- */
   const renderStep4 = () => (
     <div className="space-y-6">
-
       <Alert>
         <AlertDescription>
-          Seleccione en que sucursal y a que precio se venderan  los productos.
+          Seleccione en qué sucursal y a qué precio se venderán los productos.
         </AlertDescription>
       </Alert>
 
@@ -461,11 +486,9 @@ export default function NuevoProductoForm() {
           </CardHeader>
 
           <CardContent className="space-y-4">
-
             {sucursales
               .filter(s => sucursalesInventarioIds.includes(s.id_sucursal))
               .map(suc => {
-
                 const svIndex = v.sucursales_venta.findIndex(s => s.id_sucursal === suc.id_sucursal);
                 const selected = svIndex !== -1;
 
@@ -499,7 +522,6 @@ export default function NuevoProductoForm() {
                         )}
                       />
                     )}
-
                   </div>
                 );
               })}
@@ -513,44 +535,42 @@ export default function NuevoProductoForm() {
                 </FormItem>
               )}
             />
-
           </CardContent>
-
         </Card>
       ))}
-
     </div>
   );
 
-  /* ----------------------- STEPS REMOVED - NO LONGER NEEDED --------------------------- */
 
-  /* ------------------------- RETURN ------------------------ */
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+
   return (
     <div className="p-6">
-
       <Card>
         <CardHeader>
           <div className="w-full flex justify-between">
-                    <Link to={"/productos"} className="bg-primary text-white p-2 flex rounded-2xl">
-                        <ArrowLeft></ArrowLeft>
-                        regresar
-                    </Link>
+            <Button onClick={()=>{window.history.back()}} className="bg-primary text-white p-2 flex rounded-2xl">
+              <ArrowLeft />
+              Regresar
+            </Button>
           </div>
-          <CardTitle>Crear Producto</CardTitle>
-          <CardDescription>Formulario paso a paso</CardDescription>
-          
+          <CardTitle>Editar Producto</CardTitle>
+          <CardDescription>Formulario de actualización paso a paso</CardDescription>
         </CardHeader>
 
         <CardContent>
-
-          {/* PASOS */}
           <div className="mb-8">
             <div className="flex justify-between items-center">
-
               {[1, 2, 3, 4].map((stepNum, i) => (
                 <React.Fragment key={stepNum}>
                   <div className="flex flex-col items-center">
-
                     <div className={`
                       w-10 h-10 rounded-full flex items-center justify-center font-bold
                       ${currentStep > stepNum
@@ -562,22 +582,16 @@ export default function NuevoProductoForm() {
                     `}>
                       {currentStep > stepNum ? <Check /> : stepNum}
                     </div>
-
                     <span className="text-xs mt-2">{["Producto Base", "Inventario", "Variantes", "Precios"][i]}</span>
                   </div>
-
                   {i < 3 && <div className="h-1 flex-1 bg-gray-200 mx-2" />}
-
                 </React.Fragment>
               ))}
-
             </div>
           </div>
 
-          {/* FORM */}
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-
+            <div className="space-y-6">
               <div className="min-h-[400px]">
                 {currentStep === 1 && renderStep1()}
                 {currentStep === 2 && renderStep2()}
@@ -600,19 +614,28 @@ export default function NuevoProductoForm() {
                     Siguiente <ChevronRight className="ml-2" />
                   </Button>
                 ) : (
-                  <Button type="submit" className="bg-green-600 text-white" disabled={creating}>
-                    <Check className="mr-2" /> Crear Producto
+                  <Button 
+                    type="button" 
+                    onClick={() => form.handleSubmit(onSubmit)()} 
+                    className="bg-blue-600 text-white" 
+                    disabled={updating}
+                  >
+                    {updating ? (
+                      <>
+                        <Loader2 className="mr-2 animate-spin" /> Actualizando...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="mr-2" /> Actualizar Producto
+                      </>
+                    )}
                   </Button>
                 )}
-
               </div>
-
-            </form>
+            </div>
           </Form>
-
         </CardContent>
       </Card>
-
     </div>
   );
 }

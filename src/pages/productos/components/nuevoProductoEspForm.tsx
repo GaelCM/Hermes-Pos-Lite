@@ -26,6 +26,8 @@ const formSchema = z.object({
   descripcion: z.string().optional(),
   id_categoria: z.string().min(1, 'La categoría es requerida'),
   precio_venta: z.coerce.number().positive({ message: 'El precio de venta debe ser mayor a 0' }),
+  cantidad_actual: z.number(),
+  cantidad_minima: z.number(),
   componentes: z.array(
     z.object({
       id_unidad_venta: z.number(),
@@ -66,6 +68,8 @@ export default function NuevoProductoCompuestoForm({id_sucursal}:{id_sucursal:nu
       descripcion: "",
       id_categoria: "",
       precio_venta: 0,
+      cantidad_actual: 0,
+      cantidad_minima: 0,
       componentes: []
     }
   });
@@ -128,7 +132,7 @@ export default function NuevoProductoCompuestoForm({id_sucursal}:{id_sucursal:nu
 
   const onSubmit = async(values: FormValues) => {
     console.log("PRODUCTO COMPUESTO:", values);
-    const res=await insertarProductoEspecialApi(values);
+   const res=await insertarProductoEspecialApi(values);
     if(res.success){
       toast.success('Producto compuesto creado con éxito');
       form.reset();
@@ -331,6 +335,49 @@ export default function NuevoProductoCompuestoForm({id_sucursal}:{id_sucursal:nu
                                 )}
                               </p>
                             )}
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="cantidad_actual"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Cantidad_actual *</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={field.value}
+                                onChange={(e) =>
+                                  field.onChange(parseFloat(e.target.value))
+                                }
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+
+                      <FormField
+                        control={form.control}
+                        name="cantidad_minima"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Cantidad_minima *</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={field.value}
+                                onChange={(e) =>
+                                  field.onChange(parseFloat(e.target.value))
+                                }
+                              />
+                            </FormControl>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />

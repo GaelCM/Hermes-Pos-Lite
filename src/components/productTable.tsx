@@ -5,9 +5,11 @@ import { Badge } from "./ui/badge"
 import type { Producto } from "@/types/Producto"
 import { useListaProductos } from "@/contexts/listaProductos"
 import { getProductos } from "@/api/productosApi/productosApi"
-import { ShoppingCart,Search } from "lucide-react"
+import { ShoppingCart,Search, SquarePen } from "lucide-react"
 import { Input } from "./ui/input"
 import { toast } from "sonner"
+import { useCurrentUser } from "@/contexts/currentUser"
+import { Link } from "react-router"
 
 
 
@@ -22,7 +24,8 @@ export function ProductTable({idSucursal,inputRef }: Props) {
   const [filteredProductos,setFilteredProductos]=useState<Producto[]>([])
    const [searchTerm, setSearchTerm] = useState('');
   const [loading,setLoading]=useState(false);
-  const {addProduct}=useListaProductos()
+  const {addProduct}=useListaProductos();
+  const {user}=useCurrentUser();
 
  useEffect(()=>{
     setLoading(true)
@@ -99,8 +102,9 @@ export function ProductTable({idSucursal,inputRef }: Props) {
               <th className="px-3 py-2">Descripción</th>
               <th className="px-3 py-2">Precio</th>
               <th className="px-3 py-2">Stock</th>
+              <th className="px-3 py-2">Stock Actual</th>
               <th className="px-3 py-2">Unidad</th>
-              <th className="px-3 py-2 text-right">Acción</th>
+              <th className="px-3 py-2 text-center">Acción</th>
             </tr>
           </thead>
           <tbody>
@@ -130,11 +134,15 @@ export function ProductTable({idSucursal,inputRef }: Props) {
                       ) : null}
                     </div>
                   </td>
+                   <td className="px-3 py-3 align-middle">
+                    <div className="text-sm font-semibold">{p.stock_piezas}</div>
+                  </td>
                   <td className="px-3 py-3 align-middle text-sm text-muted-foreground"><Badge>{p.nombre_presentacion}</Badge></td>
-                  <td className="px-3 py-3 align-middle text-right">
+                  <td className="px-3 py-3 align-middle flex justify-center ">
                     <div className="flex justify-end">
                       <Button
                         size="sm"
+                        variant={"outline"}
                         onClick={() => {
                             addProduct(p)
                             toast.success("Producto agregado correctamente")
@@ -148,7 +156,25 @@ export function ProductTable({idSucursal,inputRef }: Props) {
                       >
                         <ShoppingCart></ShoppingCart>
                       </Button>
+
                     </div>
+
+                    {user.id_rol===1&&p.es_producto_compuesto===0?(
+                      <Link to={`/productos/editProducto?id=${p.id_producto}`} >
+                        <Button size="sm" className="ml-2" aria-label={`Editar ${p.nombre_producto}`}>
+                          <SquarePen></SquarePen>
+                        </Button>
+                      </Link>
+                    ):null}
+
+                    {user.id_rol===1&&p.es_producto_compuesto===1?(
+                      <Link to={`/productos/editProductoEspecial?id=${p.id_producto}`} >
+                        <Button size="sm" variant={"outline"} className="ml-2" aria-label={`Editar ${p.nombre_producto}`}>
+                          <SquarePen></SquarePen>
+                        </Button>
+                      </Link>
+                    ):null}
+                      
                   </td>
                 </tr>
               )

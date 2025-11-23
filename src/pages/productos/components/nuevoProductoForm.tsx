@@ -368,7 +368,7 @@ export default function NuevoProductoForm() {
       </Alert>
 
       {variantes.map((v, index) => (
-        <Card key={index}>
+        <Card key={index} className={`${v}`} >
           <CardContent className="pt-6 space-y-4">
 
             {index > 0 && (

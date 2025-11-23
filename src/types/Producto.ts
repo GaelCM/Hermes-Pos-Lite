@@ -46,12 +46,6 @@ export type ProductoVentaResponse={
 }
 
 
-export type ProductoGeneralResponse={
-    success: boolean;
-    message: string;
-    data: ProductoFormFinal;
-}
-
 export interface ProductoFormFinal{
     nombre_producto: string;
     descripcion?: string | undefined;
@@ -76,6 +70,12 @@ export interface ProductoFormFinal{
     }[];
 }
 
+export type ProductoGeneralResponse={
+    success: boolean;
+    message: string;
+    data: ProductoFormFinal;
+}
+
 
 type ComponenteProductoEspecial = {
   id_unidad_venta: number;
@@ -96,4 +96,10 @@ export type ProductoEspecialInput = {
   isEspecial: number;  // 1 para especial, 0 para normal
   componentes: ComponenteProductoEspecial[];
 };
+
+export type ProductoGeneralEspResponse={
+    success: boolean;
+    message: string;
+    data: ProductoEspecialInput;
+}
 

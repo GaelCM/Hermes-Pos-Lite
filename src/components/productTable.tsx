@@ -168,7 +168,7 @@ export function ProductTable({idSucursal,inputRef }: Props) {
                     ):null}
 
                     {user.id_rol===1&&p.es_producto_compuesto===1?(
-                      <Link to={`/productos/editProductoEspecial?id=${p.id_producto}`} >
+                      <Link to={`/productos/editProductoEspecial?id=${p.id_producto}&suc=${idSucursal}`} >
                         <Button size="sm" variant={"outline"} className="ml-2" aria-label={`Editar ${p.nombre_producto}`}>
                           <SquarePen></SquarePen>
                         </Button>

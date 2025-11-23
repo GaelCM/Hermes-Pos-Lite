@@ -399,7 +399,7 @@ export default function EditarProductoForm() {
       </Alert>
 
       {variantes.map((v, index) => (
-        <Card key={index} className="relative">
+        <Card key={index} className={`relative ${v}`}>
           <CardContent className="pt-6 space-y-4">
             {index > 0 && (
               <Button

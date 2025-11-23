@@ -7,6 +7,7 @@ import ProductosPage from "./pages/productos/productosPage"
 import ProductosXSuc from "./pages/productos/components/productosXsuc"
 import TipoProductoPage from "./pages/productos/components/tipoProductoRoute"
 import EditarProductoForm from "./pages/productos/components/editarProductoForm"
+import EditarProductoCompuestoForm from "./pages/productos/components/editarProductoEspForm"
 
 
 
@@ -38,6 +39,10 @@ export const rutas=createHashRouter([
                     {
                         path:"/productos/editProducto",
                         element:<EditarProductoForm/>
+                    },
+                    {
+                        path:"/productos/editProductoEspecial",
+                        element:<EditarProductoCompuestoForm/>
                     }
                 ]
             }

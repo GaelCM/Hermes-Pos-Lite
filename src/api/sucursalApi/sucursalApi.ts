@@ -2,7 +2,7 @@ import type { SucursalResponse } from "@/types/Sucursal";
 
 export const obtenerSucursalesApi=async():Promise<SucursalResponse>=>{
     try {
-        const res=await fetch(`http://localhost:3000/api/sucursales`);
+        const res=await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/sucursales`);
         if(!res.ok){
             throw new Error(`Error del servidor: ${res.status}`);
         }

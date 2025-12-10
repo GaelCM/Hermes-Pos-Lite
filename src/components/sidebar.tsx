@@ -1,5 +1,5 @@
 
-import { Activity, BarChart3, Box, Home, LogOut, Package, Pill, Plus, ShoppingCart, UserPlus, Users, X } from "lucide-react";
+import { Activity, BarChart3, Box, Home, Lock, LogOut, Package, Pill, Plus, ShoppingCart, UserPlus, Users, X } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router"
 import { Button } from "./ui/button";
@@ -133,7 +133,10 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
                         <span className="text-xs text-sidebar-foreground/70 truncate">{user?.email}</span>
                         <span className="text-xs text-sidebar-foreground/70 truncate">{user?.rol}</span>
                     </div>
-                    <div>
+                    <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => navigate("/cerrar-caja")} title="Cerrar Caja">
+                            <Lock className="w-4 h-4" />
+                        </Button>
                         <Button variant="ghost" size="sm" onClick={() => {
                             localStorage.removeItem("tkn");
                             localStorage.removeItem("currentUser");

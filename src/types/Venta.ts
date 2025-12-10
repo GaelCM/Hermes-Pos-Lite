@@ -1,6 +1,6 @@
 
 
-export type EstadoVenta="Inicio" | "Cargando" | "Listo" | "Error";
+export type EstadoVenta = "Inicio" | "Cargando" | "Listo" | "Error";
 
 
 interface CarritoItem {
@@ -26,4 +26,5 @@ export interface CarritoPayload {
   metodo_pago: number;
   monto_recibido: number;
   productos: CarritoItem[];
+  id_turno: number;
 }

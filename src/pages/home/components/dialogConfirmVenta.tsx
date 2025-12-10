@@ -21,14 +21,14 @@ type dialogProps = {
 
 export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPago }: dialogProps) {
 
-
-
     const [estado, setEstado] = useState<EstadoVenta>("Inicio");
     const { getCarritoActivo, getTotalPrice, carritoActivo, eliminarCarrito } = useListaProductos();
     const { cliente } = useCliente();
     const { user } = useCurrentUser()
     const carritoActual = getCarritoActivo();
     const [cambioEfectivo, setCambioEfectivo] = useState(0); // Estado para manejar el cambio
+    const turnoDataString = localStorage.getItem("openCaja") || "{}";
+    const turnoData = JSON.parse(turnoDataString);
 
     const reloadVenta = async () => {
         setCambioEfectivo(0);
@@ -69,6 +69,7 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                 metodo_pago: metodoPago,
                 productos: getCarritoActivo()?.productos || [],
                 id_cliente: cliente.idCliente,
+                id_turno: turnoData.id_turno
             };
             console.log("Venta final a enviar:", ventaFinal);
             const res = await nuevaVentaApi(ventaFinal);

@@ -4,7 +4,7 @@ import type { DetalleTransferenciaDTO, NuevaTransferenciaDTO, RecibirTransferenc
 
 export const obtenerProductosTransferirApi = async (idSucursal: string): Promise<ProductoVentaResponse> => {
     try {
-        const res = await fetch(`http://localhost:3000/api/transferencias/productos/${idSucursal}`, {
+        const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/transferencias/productos/${idSucursal}`, {
             method: "GET",
             headers: {
                 "Authorization": `Bearer ${localStorage.getItem("tkn")}`,
@@ -30,7 +30,7 @@ export const obtenerProductosTransferirApi = async (idSucursal: string): Promise
 
 export const nuevaTransferenciaApi = async (formData: NuevaTransferenciaDTO): Promise<{ success: boolean, message: string, data: number }> => {
     try {
-        const res = await fetch(`http://localhost:3000/api/transferencias/nueva-transferencia`, {
+        const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/transferencias/nueva-transferencia`, {
             method: "post",
             headers: {
                 "Authorization": `Bearer ${localStorage.getItem("tkn")}`,
@@ -58,7 +58,7 @@ export const nuevaTransferenciaApi = async (formData: NuevaTransferenciaDTO): Pr
 
 export const obtenerTransferenciasApi = async (id_usuario: number, id_rol: number, fecha_desde: string, fecha_hasta: string): Promise<{ success: boolean, message: string, data: TransferenciaDTO[] }> => {
     try {
-        const res = await fetch(`http://localhost:3000/api/transferencias/getTransferencias`, {
+        const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/transferencias/getTransferencias`, {
             method: "post",
             headers: {
                 "Authorization": `Bearer ${localStorage.getItem("tkn")}`,
@@ -91,7 +91,7 @@ export const obtenerTransferenciasApi = async (id_usuario: number, id_rol: numbe
 
 export const obtenerTransferenciasPendientesApi = async (id_sucursal: number): Promise<{ success: boolean, message: string, data: TransferenciaDTO[] }> => {
     try {
-        const res = await fetch(`http://localhost:3000/api/transferencias/pendientes/${id_sucursal}`, {
+        const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/transferencias/pendientes/${id_sucursal}`, {
             method: "get",
             headers: {
                 "Authorization": `Bearer ${localStorage.getItem("tkn")}`,
@@ -117,7 +117,7 @@ export const obtenerTransferenciasPendientesApi = async (id_sucursal: number): P
 
 export const enviarTransferenciasApi = async (id_transferencia: number, id_usuario: number): Promise<{ success: boolean, message: string, data: number }> => {
     try {
-        const res = await fetch(`http://localhost:3000/api/transferencias/enviar/${id_transferencia}/${id_usuario}`, {
+        const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/transferencias/enviar/${id_transferencia}/${id_usuario}`, {
             method: "GET",
             headers: {
                 "Authorization": `Bearer ${localStorage.getItem("tkn")}`,
@@ -144,7 +144,7 @@ export const enviarTransferenciasApi = async (id_transferencia: number, id_usuar
 
 export const obtenerDetalleTransferenciaApi = async (id_transferencia: number): Promise<{ success: boolean, message: string, data: DetalleTransferenciaDTO }> => {
     try {
-        const res = await fetch(`http://localhost:3000/api/transferencias/detalle/${id_transferencia}`, {
+        const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/transferencias/detalle/${id_transferencia}`, {
             method: "get",
             headers: {
                 "Authorization": `Bearer ${localStorage.getItem("tkn")}`,
@@ -170,7 +170,7 @@ export const obtenerDetalleTransferenciaApi = async (id_transferencia: number): 
 
 export const recibirYAutorizarTransferenciaApi = async (id_transferencia: number, datos: RecibirTransferenciaDTO): Promise<{ success: boolean, message: string }> => {
     try {
-        const res = await fetch(`http://localhost:3000/api/transferencias/recibir`, {
+        const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/transferencias/recibir`, {
             method: "post",
             headers: {
                 "Authorization": `Bearer ${localStorage.getItem("tkn")}`,

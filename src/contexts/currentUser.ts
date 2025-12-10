@@ -5,7 +5,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 
 
 type currentUser = {
-    user:authCredentials ; // <--- El carrito ahora contiene CartItems
+    user: authCredentials; // <--- El carrito ahora contiene CartItems
     addUser: (User: authCredentials) => void; // Añade o incrementa cantidad
     clearUser: () => void; // Elimina todos los Medicamentos
 };
@@ -13,39 +13,39 @@ type currentUser = {
 export const useCurrentUser = create(
     persist<currentUser>(
         (set) => ({
-            user:{
+            user: {
                 id_usuario: 0,
                 usuario: "",
                 email: "",
                 id_rol: 0,
                 rol: "",
                 id_sucursal: 0,
-                sucursal:"",
+                sucursal: "",
                 permisos: []
             },
             addUser: (newUser: authCredentials) => {
                 console.log("Usuario actualizado:", newUser);
-                set({ user:newUser }); // <-- reemplaza el objeto
+                set({ user: newUser }); // <-- reemplaza el objeto
             },
             clearUser: () => {
-                 console.log("Limpiando User");
+                console.log("Limpiando User");
                 set({
-                user:{
-                    id_usuario: 0,
-                    usuario: "",
-                    email: "",
-                    id_rol: 0,
-                    rol: "",
-                    id_sucursal: 0,
-                    sucursal:"",
-                    permisos: []
-                }
+                    user: {
+                        id_usuario: 0,
+                        usuario: "",
+                        email: "",
+                        id_rol: 0,
+                        rol: "",
+                        id_sucursal: 0,
+                        sucursal: "",
+                        permisos: []
+                    }
                 });
             },
         }),
         {
             name: "currentUser", // Cambiado nombre para evitar conflictos si la versión vieja aún existe
-            storage: createJSONStorage(() => localStorage),
+            storage: createJSONStorage(() => localStorage)
         }
     )
 );

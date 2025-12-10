@@ -16,6 +16,9 @@ import EditarSucursalForm from "./pages/sucursales/components/editarSucursalForm
 import CategoriasPage from "./pages/categorias/categoriasPage"
 import NuevaCategoriaForm from "./pages/categorias/components/NuevaCategoriaForm"
 import EditarCategoriaForm from "./pages/categorias/components/EditarCategoriaForm"
+import EgresosPage from "./pages/egresos/egresos"
+import CerrarCajaPage from "./pages/caja/CerrarCajaPage"
+import DashboardPage from "./pages/dashboard/dashboard"
 
 
 
@@ -83,6 +86,18 @@ export const rutas = createHashRouter([
                     {
                         path: "/categorias/editar/:id",
                         element: <EditarCategoriaForm />
+                    },
+                    {
+                        path: "/egresos",
+                        element: <EgresosPage />
+                    },
+                    {
+                        path: "/cerrar-caja",
+                        element: <CerrarCajaPage />
+                    },
+                    {
+                        path: "/dashboard",
+                        element: <DashboardPage />
                     }
                 ]
             }

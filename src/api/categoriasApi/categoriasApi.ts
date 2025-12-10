@@ -1,6 +1,6 @@
 import type { CategoriaDTO, CategoriaResponse, CategoriaSingleResponse } from "@/types/Categoria";
 
-const BASE_URL = "http://localhost:3000/api/categorias";
+const BASE_URL = "https://elamigos-elamigosapi.xj7zln.easypanel.host/api/categorias";
 
 const getHeaders = () => ({
     "Authorization": `Bearer ${localStorage.getItem("tkn")}`,

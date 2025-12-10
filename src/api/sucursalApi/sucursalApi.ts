@@ -2,7 +2,7 @@ import type { SucursalDTO, SucursalOutput, SucursalResponse } from "@/types/Sucu
 
 export const obtenerSucursalesApi = async (): Promise<SucursalResponse> => {
     try {
-        const res = await fetch(`http://localhost:3000/api/sucursales`, {
+        const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/sucursales`, {
             method: "GET",
             headers: {
                 "Authorization": `Bearer ${localStorage.getItem("tkn")}`,
@@ -29,7 +29,7 @@ export const obtenerSucursalesApi = async (): Promise<SucursalResponse> => {
 
 export const obtenerSucursalApi = async (id_sucursal: number): Promise<{ success: boolean, message: string, data: SucursalOutput }> => {
     try {
-        const res = await fetch(`http://localhost:3000/api/sucursales/${id_sucursal}`, {
+        const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/sucursales/${id_sucursal}`, {
             method: "GET",
             headers: {
                 "Authorization": `Bearer ${localStorage.getItem("tkn")}`,
@@ -52,7 +52,7 @@ export const obtenerSucursalApi = async (id_sucursal: number): Promise<{ success
 
 export const insertarSucursalApi = async (sucursalData: SucursalDTO): Promise<{ success: boolean, message: string, data: string }> => {
     try {
-        const res = await fetch(`http://localhost:3000/api/sucursales`, {
+        const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/sucursales`, {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${localStorage.getItem("tkn")}`,
@@ -80,7 +80,7 @@ export const insertarSucursalApi = async (sucursalData: SucursalDTO): Promise<{ 
 
 export const eliminarSucursalApi = async (id_sucursal: number): Promise<{ success: boolean, message: string, data: string }> => {
     try {
-        const res = await fetch(`http://localhost:3000/api/sucursales/${id_sucursal}`, {
+        const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/sucursales/${id_sucursal}`, {
             method: "DELETE",
             headers: {
                 "Authorization": `Bearer ${localStorage.getItem("tkn")}`,
@@ -104,7 +104,7 @@ export const eliminarSucursalApi = async (id_sucursal: number): Promise<{ succes
 
 export const actualizarSucursalApi = async (id: number, sucursalData: SucursalDTO): Promise<{ success: boolean, message: string, data: string }> => {
     try {
-        const res = await fetch(`http://localhost:3000/api/sucursales/${id}`, {
+        const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/sucursales/${id}`, {
             method: "PUT",
             headers: {
                 "Authorization": `Bearer ${localStorage.getItem("tkn")}`,

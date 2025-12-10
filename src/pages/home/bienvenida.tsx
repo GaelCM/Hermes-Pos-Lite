@@ -2,18 +2,35 @@ import { useCurrentUser } from "@/contexts/currentUser"
 import { Reloj } from "./components/reloj";
 import logo from "@/assets/banner.png"
 import { ShoppingBag, Tag } from "lucide-react";
+import { useState } from "react";
+import DialogNuevoTurno from "./components/dialogNuevoTurno";
+import { existCorteApi } from "@/api/cortesApi/cortesApi";
+import { toast } from "sonner";
 
-export default function Bienvenida() {
+interface BienvenidaProps {
+    onCajaOpened: () => void;
+}
+
+export default function Bienvenida({ onCajaOpened }: BienvenidaProps) {
 
     const { user } = useCurrentUser();
+    const [isOpen, setIsOpen] = useState(false);
 
-    const handleAbrirCaja = () => {
-        localStorage.setItem("openCaja", "true");
-        window.location.reload();
+    const handleAbrirCaja = async () => {
+
+        const res = await existCorteApi(user.id_usuario!, user.id_sucursal!);
+        if (res.data.existe) {
+            localStorage.setItem("openCaja", JSON.stringify(res.data));
+            onCajaOpened();
+            toast.success("Caja abierta");
+        } else {
+            setIsOpen(true);
+        }
     };
 
     return (
         <div className="min-h-[90vh]  flex items-center justify-center ">
+
             <div className="w-full max-w-7xl h-[80vh] bg-white rounded-3xl shadow-2xl overflow-hidden flex ring-1 ring-slate-900/5">
 
                 {/* Left Side - Publicidad / Digital Signage */}
@@ -64,8 +81,8 @@ export default function Bienvenida() {
                     {/* Status Bar */}
                     <div className="absolute top-6 right-6 flex items-center gap-3">
                         <div className="px-3 py-1 bg-white rounded-full border border-slate-200 shadow-xs flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                            <span className="text-xs font-semibold text-slate-600 tracking-wide">CAJA 01 • EN LÍNEA</span>
+                            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                            <span className="text-xs font-semibold text-slate-600 tracking-wide">Caja Cerrada • EN LÍNEA</span>
                         </div>
                     </div>
 
@@ -99,8 +116,8 @@ export default function Bienvenida() {
                         Sistema de Punto de Venta • El Amigo
                     </div>
                 </div>
-
             </div>
+            <DialogNuevoTurno isOpen={isOpen} onOpenChange={setIsOpen} onCajaOpened={onCajaOpened} />
         </div>
     )
 }

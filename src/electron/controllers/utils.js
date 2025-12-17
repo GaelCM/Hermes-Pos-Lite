@@ -1,4 +1,5 @@
 import { ipcMain, BrowserWindow } from "electron";
+import { exec } from "child_process";
 
 function utilsController() {
     ipcMain.handle('list-prints', async (event) => {
@@ -7,6 +8,27 @@ function utilsController() {
         } catch (error) {
             console.error("Error al obtener impresoras:", error);
             return [];
+        }
+    });
+
+    ipcMain.handle('open-cash-drawer', async (event, printerName) => {
+        console.log("Solicitud de apertura de cajón para:", printerName);
+        if (!printerName) return false;
+
+        try {
+            // Comando ESC/POS estándar para abrir cajón: ESC p 0 25 250
+            // En decimal: 27 112 0 25 250
+            const command = `powershell -Command "[char]27 + [char]112 + [char]0 + [char]25 + [char]250 | Out-Printer -Name '${printerName}'"`;
+
+            exec(command, (error) => {
+                if (error) {
+                    console.error("Error ejecutando comando de apertura de cajón:", error);
+                }
+            });
+            return true;
+        } catch (error) {
+            console.error("Error al intentar abrir el cajón:", error);
+            return false;
         }
     });
 

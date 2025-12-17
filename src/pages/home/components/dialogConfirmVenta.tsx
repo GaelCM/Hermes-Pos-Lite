@@ -103,6 +103,9 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                         });
 
                         // @ts-ignore
+                        window["electron-api"]?.openCashDrawer(printerName);
+
+                        // @ts-ignore
                         window["electron-api"]?.printTicket({
                             content: ticketHtml,
                             printerName

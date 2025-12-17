@@ -77,6 +77,43 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                 toast.success('Venta generada correctamente', {
                     description: `La venta se ha generado correctamente, FOLIO ${res.data}`,
                 });
+
+                // --- INICIO LÓGICA DE IMPRESIÓN ---
+                try {
+                    const printerName = localStorage.getItem("printer_device");
+                    if (printerName) {
+                        // Importamos dinámicamente o usamos la función importada arriba
+                        const { generateTicketHTML } = await import("@/utils/ticketGenerator");
+
+                        const ticketHtml = generateTicketHTML({
+                            sucursal: "Sucursal " + user.id_sucursal, // Podrías tener el nombre real en user o config
+                            usuario: user.usuario,
+                            cliente: cliente.nombreCliente || "Público General",
+                            folio: res.data || "S/N",
+                            fecha: new Date(),
+                            productos: carritoActual?.productos?.map(p => ({
+                                cantidad: p.quantity,
+                                nombre: p.product.nombre_producto,
+                                precio_unitario: p.product.precio_venta,
+                                importe: p.product.precio_venta * p.quantity
+                            })) || [],
+                            total: getTotalPrice(),
+                            pago_con: cambioEfectivo,
+                            cambio: Math.max(0, cambioEfectivo - getTotalPrice())
+                        });
+
+                        // @ts-ignore
+                        window["electron-api"]?.printTicket({
+                            content: ticketHtml,
+                            printerName
+                        });
+                    }
+                } catch (printError) {
+                    console.error("Error al intentar imprimir ticket automático:", printError);
+                    toast.error("No se pudo imprimir el ticket", { duration: 2000 });
+                }
+                // --- FIN LÓGICA DE IMPRESIÓN ---
+
                 setEstado("Listo");
             } else {
                 console.error("Error del servidor al crear venta:", res);

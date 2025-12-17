@@ -27,3 +27,28 @@ export interface ReporteVentasResponse {
     ventas: ReporteVentaDetallado[];
 }
 
+
+export interface VentaMensual {
+    mes_anio: string;
+    mes_nombre: string;
+    sucursal: string;
+    id_sucursal: number;
+    total_ventas: number;
+    monto_total: number;
+    ticket_promedio: number;
+    venta_minima: number;
+    venta_maxima: number;
+    ventas_efectivo_count: number;
+    monto_efectivo: number;
+    ventas_tarjeta_count: number;
+    monto_tarjeta: number;
+    ventas_transferencia_count: number;
+    monto_transferencia: number;
+}
+
+
+export interface ReporteVentasMensualesResponse {
+    success: boolean;
+    message: string;
+    data: VentaMensual[];
+}

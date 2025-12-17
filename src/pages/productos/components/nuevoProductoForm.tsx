@@ -20,6 +20,8 @@ import { toast } from "sonner";
 import type { ProductoFormFinal } from "@/types/Producto";
 import type { Categoria } from "@/types/Categoria";
 import { obtenerCategoriasApi } from "@/api/categoriasApi/categoriasApi";
+import { obtenerSucursalesApi } from "@/api/sucursalApi/sucursalApi";
+import type { Sucursal } from "@/types/Sucursal";
 
 const formSchema = z.object({
   nombre_producto: z.string().min(1, 'El nombre del producto es requerido'),
@@ -56,12 +58,8 @@ export default function NuevoProductoForm() {
 
   const [currentStep, setCurrentStep] = useState(1);
   const navigate = useNavigate();
-  const [sucursales] = useState([
-    { id_sucursal: 1, nombre: 'Sucursal Central' },
-    { id_sucursal: 2, nombre: 'Sucursal Xoxo' },
-    { id_sucursal: 3, nombre: 'Sucursal Test' }
-  ]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [sucursales, setSucursales] = useState<Sucursal[]>([]);
 
   useEffect(() => {
     obtenerCategoriasApi().then(res => {
@@ -69,6 +67,13 @@ export default function NuevoProductoForm() {
         setCategorias(res.data);
       } else {
         setCategorias([]);
+      }
+    });
+    obtenerSucursalesApi().then(res => {
+      if (res.success) {
+        setSucursales(res.data);
+      } else {
+        setSucursales([]);
       }
     });
   }, [])

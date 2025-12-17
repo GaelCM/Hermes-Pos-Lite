@@ -73,6 +73,63 @@ export default function Home() {
     }, [setIsOpen]); // El array de dependencias es opcional pero recomendado
 
 
+    // --- Accessibility & Keyboard Navigation Logic ---
+    const [selectedIndex, setSelectedIndex] = useState(0);
+    const prevLengthRef = useRef(0);
+
+    // Auto-select last item when added
+    useEffect(() => {
+        const currentLength = carritoActual?.productos?.length ?? 0;
+        if (currentLength > prevLengthRef.current) {
+            setSelectedIndex(currentLength - 1);
+        } else if (currentLength < prevLengthRef.current) {
+            setSelectedIndex((prev) => Math.min(prev, currentLength - 1));
+        }
+        prevLengthRef.current = currentLength;
+    }, [carritoActual?.productos?.length]);
+
+    // Scroll selected into view
+    useEffect(() => {
+        const element = document.getElementById(`product-row-${selectedIndex}`);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }, [selectedIndex]);
+
+    // Navigation Hotkeys
+    useHotkeys('up', (e) => {
+        e.preventDefault();
+        setSelectedIndex(prev => Math.max(0, prev - 1));
+    }, { enableOnFormTags: true });
+
+    useHotkeys('down', (e) => {
+        e.preventDefault();
+        setSelectedIndex(prev => Math.min((carritoActual?.productos?.length ?? 0) - 1, prev + 1));
+    }, { enableOnFormTags: true }, [carritoActual?.productos?.length]);
+
+    // Action Hotkeys
+    useHotkeys('right', (e) => {
+        e.preventDefault();
+        if (!carritoActual?.productos?.length) return;
+        const prod = carritoActual.productos[selectedIndex];
+        if (prod) incrementQuantity(prod.product.id_unidad_venta);
+    }, { enableOnFormTags: true }, [selectedIndex, carritoActual]);
+
+    useHotkeys('left', (e) => {
+        e.preventDefault();
+        if (!carritoActual?.productos?.length) return;
+        const prod = carritoActual.productos[selectedIndex];
+        if (prod) decrementQuantity(prod.product.id_unidad_venta);
+    }, { enableOnFormTags: true }, [selectedIndex, carritoActual]);
+
+    useHotkeys('delete', () => {
+        if (!carritoActual?.productos?.length) return;
+        const prod = carritoActual.productos[selectedIndex];
+        if (prod) removeProduct(prod.product.id_unidad_venta);
+    }, { enableOnFormTags: true }, [selectedIndex, carritoActual]);
+    // ------------------------------------------------
+
+
     const focusInput = () => {
         setTimeout(() => {
             inputRef?.current?.focus();
@@ -177,8 +234,13 @@ export default function Home() {
                                     <p className="text-sm">Escanea un código de barras para comenzar</p>
                                 </div>
                             ) : (
-                                carritoActual?.productos?.map((producto) => (
-                                    <div key={producto.product.sku_presentacion} className="space-y-2 p-3 border rounded-lg">
+                                carritoActual?.productos?.map((producto, index) => (
+                                    <div
+                                        key={producto.product.sku_presentacion}
+                                        id={`product-row-${index}`}
+                                        className={`space-y-2 p-3 border rounded-lg transition-colors cursor-pointer ${index === selectedIndex ? 'bg-primary/20 ring-2 ring-primary border-primary' : 'hover:bg-accent/50'}`}
+                                        onClick={() => setSelectedIndex(index)}
+                                    >
                                         {/* Fila principal con información del producto */}
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
@@ -201,7 +263,10 @@ export default function Home() {
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
-                                                    onClick={() => decrementQuantity(producto.product.id_unidad_venta)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        decrementQuantity(producto.product.id_unidad_venta);
+                                                    }}
                                                     className="w-8 h-8 p-0"
                                                 >
                                                     <Minus className="w-3 h-3" />
@@ -210,7 +275,10 @@ export default function Home() {
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
-                                                    onClick={() => incrementQuantity(producto.product.id_unidad_venta)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        incrementQuantity(producto.product.id_unidad_venta);
+                                                    }}
                                                     className="w-8 h-8 p-0"
                                                 >
                                                     <Plus className="w-3 h-3" />
@@ -231,7 +299,8 @@ export default function Home() {
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                onClick={() => {
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
                                                     removeProduct(producto.product.id_unidad_venta)
                                                     inputRef.current?.focus();
                                                 }}

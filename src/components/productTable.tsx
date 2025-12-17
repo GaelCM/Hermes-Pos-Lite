@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState, useRef } from "react"
-import { Card,CardHeader } from "./ui/card"
+import { Card, CardHeader } from "./ui/card"
 import { Button } from "./ui/button"
 import { Badge } from "./ui/badge"
 import type { ProductoVenta } from "@/types/Producto"
 import { useListaProductos } from "@/contexts/listaProductos"
 import { getProductos } from "@/api/productosApi/productosApi"
-import { ShoppingCart,Search, SquarePen } from "lucide-react"
+import { ShoppingCart, Search, SquarePen } from "lucide-react"
 import { Input } from "./ui/input"
 import { toast } from "sonner"
 import { Link } from "react-router"
@@ -15,48 +15,49 @@ import { useCurrentUser } from "@/contexts/currentUser"
 
 
 type Props = {
-  idSucursal:number
+  idSucursal: number
   inputRef?: React.RefObject<{ focus: () => void } | null>;
 }
 
-export function ProductTable({idSucursal,inputRef }: Props) {
-  const [productos,setProductos]=useState<ProductoVenta[]>([])
-  const {user}=useCurrentUser();
-  const [filteredProductos,setFilteredProductos]=useState<ProductoVenta[]>([])
-   const [searchTerm, setSearchTerm] = useState('');
-  const [loading,setLoading]=useState(false);
+export function ProductTable({ idSucursal, inputRef }: Props) {
+  const [productos, setProductos] = useState<ProductoVenta[]>([])
+  const { user } = useCurrentUser();
+  const [filteredProductos, setFilteredProductos] = useState<ProductoVenta[]>([])
+  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const tableRef = useRef<HTMLDivElement>(null);
-  const {addProduct}=useListaProductos();
-
- useEffect(()=>{
-    setLoading(true)
-    getProductos(idSucursal).then(res=>{
-        if(res.success){
-          setProductos(res.data);
-          setFilteredProductos(res.data)
-        }else{
-          setProductos([]);
-          setFilteredProductos([]);
-        }}
-      ).finally(()=>{setLoading(false)})
- },[idSucursal])
+  const { addProduct } = useListaProductos();
 
   useEffect(() => {
-        const lowercasedFilter = searchTerm.toLowerCase();
-        const filteredData = productos.filter((item) => {
-            return item.nombre_producto.toLowerCase().includes(lowercasedFilter)||item.sku_pieza.toLowerCase().includes(lowercasedFilter);
-        });
-        setFilteredProductos(filteredData);
-        setCurrentPage(1);
-        setSelectedIndex(0);
-    }, [productos, searchTerm]);
+    setLoading(true)
+    getProductos(idSucursal).then(res => {
+      if (res.success) {
+        setProductos(res.data);
+        setFilteredProductos(res.data)
+      } else {
+        setProductos([]);
+        setFilteredProductos([]);
+      }
+    }
+    ).finally(() => { setLoading(false) })
+  }, [idSucursal])
+
+  useEffect(() => {
+    const lowercasedFilter = searchTerm.toLowerCase();
+    const filteredData = productos.filter((item) => {
+      return item.nombre_producto.toLowerCase().includes(lowercasedFilter) || item.sku_pieza.toLowerCase().includes(lowercasedFilter);
+    });
+    setFilteredProductos(filteredData);
+    setCurrentPage(1);
+    setSelectedIndex(0);
+  }, [productos, searchTerm]);
 
   const [currentPage, setCurrentPage] = useState<number>(1)
   const [pageSize, setPageSize] = useState<number>(50)
 
 
-  const totalItems = filteredProductos.length||0
+  const totalItems = filteredProductos.length || 0
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
 
   useEffect(() => {
@@ -119,9 +120,9 @@ export function ProductTable({idSucursal,inputRef }: Props) {
     }
   }, [selectedIndex, pageItems]);
 
-  if(loading){
-    return(
-       <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-slate-600">Cargando productos...</p>
@@ -133,17 +134,17 @@ export function ProductTable({idSucursal,inputRef }: Props) {
   return (
     <Card className="p-2 border-0 flex flex-col h-full">
       <CardHeader>
-                <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        type="search"
-                        placeholder="Buscar productos por nombre o sku..."
-                        className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
-                        value={searchTerm}
-                        autoFocus
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
+        <div className="relative">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Buscar productos por nombre o sku..."
+            className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
+            value={searchTerm}
+            autoFocus
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
       </CardHeader>
       <div className="flex-1 overflow-y-auto w-full" ref={tableRef}>
         <table className="w-full table-auto">
@@ -151,31 +152,30 @@ export function ProductTable({idSucursal,inputRef }: Props) {
             <tr className="text-left text-sm text-muted-foreground border-b">
               <th className="px-3 py-2">Sku Presentación</th>
               <th className="px-3 py-2">Nombre</th>
-              <th className="px-3 py-2">Unidad</th> 
+              <th className="px-3 py-2">Unidad</th>
               <th className="px-3 py-2">Descripción</th>
               <th className="px-3 py-2">Precio</th>
               <th className="px-3 py-2">Stock Disponible</th>
               <th className="px-3 py-2">Stock Piezas</th>
-              <th className="px-3 py-2">Precio Mayoreo</th>              
+              <th className="px-3 py-2">Precio Mayoreo</th>
               <th className="px-3 py-2 text-center">Acción</th>
             </tr>
           </thead>
           <tbody>
             {pageItems.map((p, index) => {
-              const lowStock = p.stock_disponible_presentacion > 0 && p.stock_disponible_presentacion < 10
+              const lowStock = p.stock_disponible_presentacion > 0 && p.stock_disponible_presentacion < 5
               const outStock = p.stock_disponible_presentacion === 0
               const isSelected = index === selectedIndex;
 
               return (
-                <tr 
-                  key={p.id_unidad_venta} 
+                <tr
+                  key={p.id_unidad_venta}
                   data-index={index}
-                  
-                  className={`align-top border-t cursor-pointer transition-colors ${
-                    isSelected 
-                      ? 'bg-primary/10 border-primary shadow-sm' 
-                      : 'hover:bg-muted/50'
-                  } ${outStock ? 'opacity-50' : ''}`}
+
+                  className={`align-top border-t cursor-pointer transition-colors ${isSelected
+                    ? 'bg-primary/10 border-primary shadow-sm'
+                    : 'hover:bg-muted/50'
+                    } ${outStock ? 'opacity-50' : ''}`}
                 >
                   <td className="px-3 py-3 align-middle text-sm text-muted-foreground">{p.sku_presentacion}</td>
                   <td className="px-3 py-3 align-middle">
@@ -183,8 +183,8 @@ export function ProductTable({idSucursal,inputRef }: Props) {
                   </td>
 
                   <td className="px-3 py-3 align-middle text-sm ">
-                    <Badge className={`${p.nombre_presentacion==="Pieza"?'bg-blue-600':'bg-orange-600'}`}>{p.nombre_presentacion}</Badge>
-                    </td>
+                    <Badge className={`${p.nombre_presentacion === "Pieza" ? 'bg-blue-600' : 'bg-orange-600'}`}>{p.nombre_presentacion}</Badge>
+                  </td>
 
                   <td className="px-3 py-3 align-middle">
                     <div className="text-sm text-muted-foreground max-w-md truncate">{p.descripcion}</div>
@@ -198,7 +198,7 @@ export function ProductTable({idSucursal,inputRef }: Props) {
                       {outStock ? (
                         <Badge variant="destructive">Agotado</Badge>
                       ) : lowStock ? (
-                        <Badge variant="secondary" className="bg-red-300">Bajo</Badge>
+                        <Badge variant="secondary" className="bg-red-500 text-white">Bajo</Badge>
                       ) : null}
                     </div>
                   </td>
@@ -209,41 +209,41 @@ export function ProductTable({idSucursal,inputRef }: Props) {
                     <div className="text-sm font-semibold">${p.precio_mayoreo.toFixed(2)}</div>
                   </td>
 
-                 
-                  
+
+
                   <td className="px-3 py-3 align-middle flex justify-center ">
                     <Button
                       size="sm"
                       variant={isSelected ? "default" : "outline"}
                       onClick={(e) => {
-                          e.stopPropagation();
-                          addProduct(p)
-                          toast.success("Producto agregado correctamente")
-                          setTimeout(() => {
-                              inputRef?.current?.focus();
-                          }, 100);                       
+                        e.stopPropagation();
+                        addProduct(p)
+                        toast.success("Producto agregado correctamente")
+                        setTimeout(() => {
+                          inputRef?.current?.focus();
+                        }, 100);
                       }}
                       disabled={outStock}
                       aria-label={`Agregar ${p.nombre_producto} al carrito`}
                     >
                       <ShoppingCart></ShoppingCart>
                     </Button>
-                    
-                    {user.id_rol===1&&p.es_producto_compuesto===0?(
+
+                    {user.id_rol === 1 && p.es_producto_compuesto === 0 ? (
                       <Link to={`/productos/editProducto?id=${p.id_producto}`} >
                         <Button size="sm" variant={"default"} className="ml-2" aria-label={`Editar ${p.nombre_producto}`}>
                           <SquarePen></SquarePen>
                         </Button>
                       </Link>
-                    ):null}
+                    ) : null}
 
-                    {user.id_rol===1&&p.es_producto_compuesto===1?(
+                    {user.id_rol === 1 && p.es_producto_compuesto === 1 ? (
                       <Link to={`/productos/editProductoEspecial?id=${p.id_producto}&suc=${idSucursal}`} >
                         <Button size="sm" variant={"outline"} className="ml-2" aria-label={`Editar ${p.nombre_producto}`}>
                           <SquarePen></SquarePen>
                         </Button>
                       </Link>
-                    ):null}
+                    ) : null}
                   </td>
                 </tr>
               )

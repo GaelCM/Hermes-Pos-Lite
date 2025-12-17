@@ -1,8 +1,8 @@
-import { Calendar, ChevronDown, FileText, Menu, Package, Search, TrendingUp, Users, Wifi } from "lucide-react";
+import { Calendar, ChevronDown, FileText, Menu, Package, Search, Settings, TrendingUp, Wifi } from "lucide-react";
 import { Button } from "./ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 
-import { Outlet, useNavigate } from "react-router";
+import { Link, Outlet, useNavigate } from "react-router";
 import { useCurrentUser } from "@/contexts/currentUser";
 import { useHotkeys } from "react-hotkeys-hook";
 import { useState } from "react";
@@ -84,24 +84,25 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
                     <DropdownMenuContent align="end" className="w-56">
                       <DropdownMenuLabel>Reportes de Ventas</DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="gap-2" onClick={() => { navigate("/reportes?idReporte=1") }}>
-                        <Calendar className="w-4 h-4" />
-                        Por Mes
+                      <DropdownMenuItem className="gap-2">
+                        <Link to={"reportes/ventasPorMes"} className="flex items-center gap-2 w-full h-full">
+                          <Calendar className="w-4 h-4" />
+                          Por Mes
+                        </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem className="gap-2" onClick={() => { navigate("/reportes?idReporte=2") }}>
                         <Package className="w-4 h-4" />
                         Por Productos
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="gap-2" onClick={() => { navigate("/reportes?idReporte=3") }}>
-                        <Users className="w-4 h-4" />
-                        Por Cliente
-                      </DropdownMenuItem>
+
                       <DropdownMenuSeparator />
                       <DropdownMenuLabel>Reportes de Inventario</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem className="gap-2">
-                        <TrendingUp className="w-4 h-4" />
-                        Stock Bajo
+                        <Link to={"reportes/stockBajo"} className="flex items-center gap-2 w-full h-full">
+                          <TrendingUp className="w-4 h-4" />
+                          Stock Bajo
+                        </Link>
                       </DropdownMenuItem>
 
                     </DropdownMenuContent>
@@ -110,19 +111,10 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
                   {/* Dropdown de Período */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="gap-2 bg-transparent">
-                        <Calendar className="w-4 h-4" />
-                        Este Mes
-                        <ChevronDown className="w-4 h-4" />
-                      </Button>
+                      <Link to={"/configuraciones"} className="gap-2 bg-transparent">
+                        <Settings className="w-4 h-4" />
+                      </Link>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => { console.log(1) }}>Hoy</DropdownMenuItem>
-                      <DropdownMenuItem>Esta Semana</DropdownMenuItem>
-                      <DropdownMenuItem>Este Mes</DropdownMenuItem>
-                      <DropdownMenuItem>Último Trimestre</DropdownMenuItem>
-                      <DropdownMenuItem>Este Año</DropdownMenuItem>
-                    </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
               )}

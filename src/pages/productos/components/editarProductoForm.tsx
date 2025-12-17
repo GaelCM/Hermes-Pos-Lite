@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { obtenerCategoriasApi } from "@/api/categoriasApi/categoriasApi";
 import { actualizarProductoApi, obtenerProductoGeneral } from "@/api/productosApi/productosApi";
+import { obtenerSucursalesApi } from "@/api/sucursalApi/sucursalApi";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,13 +10,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import type { Categoria } from "@/types/Categoria";
 import type { ProductoFormFinal } from "@/types/Producto";
+import type { Sucursal } from "@/types/Sucursal";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Check, ChevronLeft, ChevronRight, Loader2, Plus, Trash2 } from "lucide-react";
 import React from "react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import {useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -57,16 +61,11 @@ export default function EditarProductoForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
 
-  const [sucursales] = useState([
-    { id_sucursal: 1, nombre: 'Sucursal Central' },
-    { id_sucursal: 2, nombre: 'Sucursal Xoxo' },
-    { id_sucursal: 3, nombre: 'Sucursal Test' }
-  ]);
+  const [sucursales, setSucursales] = useState<Sucursal[]>([]);
 
-  const [categorias] = useState([
-    { id_categoria: 1, category_name: 'Bebidas' }
-  ]);
+
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -89,12 +88,23 @@ export default function EditarProductoForm() {
   // Cargar datos del producto
   useEffect(() => {
     if (!id_producto) return;
-    
+
     const cargarProducto = async () => {
       try {
         setLoading(true);
-        
-        const data=await obtenerProductoGeneral(parseInt(id_producto));
+        obtenerSucursalesApi().then(res => {
+          if (res.success) {
+            setSucursales(res.data);
+          } else {
+            setSucursales([]);
+          }
+        });
+        const categoriasData = await obtenerCategoriasApi();
+        if (categoriasData.success) {
+          setCategorias(categoriasData.data);
+        }
+
+        const data = await obtenerProductoGeneral(parseInt(id_producto));
 
         // Si el backend devuelve sucursales_inventario como number[] (ids), mapear a objetos con cantidades por defecto
         const payload = { ...data.data } as any;
@@ -118,11 +128,11 @@ export default function EditarProductoForm() {
   const onSubmit = async (values: FormValues) => {
     setUpdating(true);
     try {
-      const data=await actualizarProductoApi(parseInt(id_producto!),values as ProductoFormFinal);
-      if(data.success){
+      const data = await actualizarProductoApi(parseInt(id_producto!), values as ProductoFormFinal);
+      if (data.success) {
         toast.success(data.message);
         window.history.back();
-      }else{
+      } else {
         toast.error(data.message);
       }
     } catch (error) {
@@ -180,7 +190,7 @@ export default function EditarProductoForm() {
       if (varianteAEliminar.id_unidad_venta) {
         console.log('Marcar para eliminar:', varianteAEliminar.id_unidad_venta);
       }
-      
+
       form.setValue(
         "variantes",
         curr.filter((_, i) => i !== index)
@@ -197,7 +207,7 @@ export default function EditarProductoForm() {
       if (exists.id_precio) {
         console.log('Marcar precio para eliminar:', exists.id_precio);
       }
-      
+
       form.setValue(
         `variantes.${varIndex}.sucursales_venta`,
         curr.filter(s => s.id_sucursal !== idSucursal)
@@ -301,7 +311,7 @@ export default function EditarProductoForm() {
         />
       </div>
 
-     
+
 
       <FormField
         control={form.control}
@@ -543,7 +553,7 @@ export default function EditarProductoForm() {
                         />
                       </div>
                     )}
-                    
+
                   </div>
                 );
               })}
@@ -578,7 +588,7 @@ export default function EditarProductoForm() {
       <Card>
         <CardHeader>
           <div className="w-full flex justify-between">
-            <Button onClick={()=>{window.history.back()}} className="bg-primary text-white p-2 flex rounded-2xl">
+            <Button onClick={() => { window.history.back() }} className="bg-primary text-white p-2 flex rounded-2xl">
               <ArrowLeft />
               Regresar
             </Button>
@@ -636,10 +646,10 @@ export default function EditarProductoForm() {
                     Siguiente <ChevronRight className="ml-2" />
                   </Button>
                 ) : (
-                  <Button 
-                    type="button" 
-                    onClick={() => form.handleSubmit(onSubmit)()} 
-                    className="bg-blue-600 text-white" 
+                  <Button
+                    type="button"
+                    onClick={() => form.handleSubmit(onSubmit)()}
+                    className="bg-blue-600 text-white"
                     disabled={updating}
                   >
                     {updating ? (

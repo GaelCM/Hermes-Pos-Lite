@@ -1,0 +1,79 @@
+import { ipcMain, BrowserWindow } from "electron";
+
+function utilsController() {
+    ipcMain.handle('list-prints', async (event) => {
+        try {
+            return await event.sender.getPrintersAsync();
+        } catch (error) {
+            console.error("Error al obtener impresoras:", error);
+            return [];
+        }
+    });
+
+    ipcMain.handle('print-ticket', async (event, { content, printerName }) => {
+        console.log("1. Recibida solicitud de impresión para:", printerName);
+
+        try {
+            let printWindow = new BrowserWindow({
+                show: false,
+                width: 300,
+                height: 600,
+                webPreferences: {
+                    nodeIntegration: true,
+                    contextIsolation: false // Simplificar para debug
+                }
+            });
+            console.log("2. Ventana creada");
+
+            // Método alternativo de carga más robusto
+            await printWindow.loadURL('about:blank');
+            console.log("3. about:blank cargado");
+
+            const htmlContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        body { margin: 0; padding: 0; background-color: white; font-family: monospace; }
+                    </style>
+                </head>
+                <body>
+                    ${content}
+                </body>
+                </html>
+            `;
+
+            // Inyectar contenido vía script
+            await printWindow.webContents.executeJavaScript(`document.write(\`${htmlContent}\`); document.close();`);
+            console.log("4. Contenido inyectado");
+
+            return new Promise((resolve, reject) => {
+                // Pequeño delay para asegurar renderizado
+                setTimeout(() => {
+                    console.log("5. Ejecutando print()...");
+                    printWindow.webContents.print({
+                        silent: true,
+                        deviceName: printerName,
+                        printBackground: true,
+                        margins: { marginType: 'none' }
+                    }, (success, errorType) => {
+                        console.log("6. Callback de print. Success:", success, "Error:", errorType);
+                        if (!success) {
+                            reject(errorType);
+                        } else {
+                            resolve(true);
+                        }
+                        printWindow.close();
+                    });
+                }, 1000);
+            });
+
+        } catch (e) {
+            console.error("ERROR CRÍTICO EN IMPRESIÓN:", e);
+            throw e;
+        }
+    });
+}
+
+export { utilsController };

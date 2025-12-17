@@ -20,6 +20,9 @@ import EgresosPage from "./pages/egresos/egresos"
 import CerrarCajaPage from "./pages/caja/CerrarCajaPage"
 import DashboardPage from "./pages/dashboard/dashboard"
 import MisVentasReport from "./pages/reportes/ventas/misVentas"
+import VentasPorMes from "./pages/reportes/ventas/ventasPorMes"
+import BajoStockPage from "./pages/reportes/stock/bajoStockPage"
+import { ListPrints } from "./components/ListPrints"
 
 
 
@@ -103,6 +106,18 @@ export const rutas = createHashRouter([
                     {
                         path: "/reportes/misVentas",
                         element: <MisVentasReport />
+                    },
+                    {
+                        path: "/reportes/ventasPorMes",
+                        element: <VentasPorMes />
+                    },
+                    {
+                        path: "/reportes/stockBajo",
+                        element: <BajoStockPage />
+                    },
+                    {
+                        path: "/configuraciones",
+                        element: <ListPrints />
                     }
                 ]
             }

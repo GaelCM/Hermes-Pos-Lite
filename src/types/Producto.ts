@@ -21,6 +21,7 @@ export interface ProductoItem {
     product: ProductoVenta;
     quantity: number;
     usarPrecioMayoreo: boolean;
+    precio_compra?: number;
 }
 
 export interface ProductoVenta {

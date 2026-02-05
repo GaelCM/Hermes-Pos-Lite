@@ -1,9 +1,10 @@
 
-import type { Compra, CompraPayload, CompraUpdateInput } from "@/types/Egresos";
+import type { DetalleCompraItem, NuevaCompra } from "@/types/ComprasT";
+import type { Compra, CompraUpdateInput } from "@/types/Egresos";
 
 
 
-export const crearCompra = async (data: CompraPayload) => {
+export const crearCompra = async (data: NuevaCompra) => {
     const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/egresos/nuevaCompra`, {
         method: "POST",
         headers: {
@@ -58,4 +59,19 @@ export const actualizarCompra = async (data: CompraUpdateInput) => {
     }
 
     return await res.json() as { success: boolean, message: string };
+}
+
+export const obtenerDetalleCompra = async (id_compra: number) => {
+    const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/reportes/detalle-compra`, {
+        method: "POST",
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('tkn')}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ id_compra })
+    });
+
+    const responseData = await res.json()
+
+    return responseData as { success: boolean, message: string, data: DetalleCompraItem[] }
 }

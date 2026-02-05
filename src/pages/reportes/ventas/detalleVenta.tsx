@@ -11,7 +11,8 @@ import {
     ChevronLeft,
     FileText,
     Layers,
-    DollarSign
+    DollarSign,
+    Printer
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,11 +20,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 
+
 export default function DetalleVentaPage() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const idVenta = searchParams.get("id");
-
     const [loading, setLoading] = useState(true);
     const [items, setItems] = useState<DetalleVentaItem[]>([]);
 
@@ -53,6 +54,45 @@ export default function DetalleVentaPage() {
 
         fetchDetalle();
     }, [idVenta, navigate]);
+
+    const reimprimirTicket = async () => {
+        if (!saleInfo) {
+            toast.error("No hay información de la venta para imprimir");
+            return;
+        }
+
+        try {
+            const printerName = localStorage.getItem("printer_device");
+            if (printerName) {
+                const ticketData = {
+                    printerName,
+                    sucursal: saleInfo.nombre_sucursal ? "Sucursal " + saleInfo.nombre_sucursal : "Sucursal",
+                    usuario: saleInfo.nombre_usuario,
+                    cliente: saleInfo.id_cliente ? `ID Cliente: #${saleInfo.id_cliente}` : "Público General",
+                    folio: saleInfo.id_venta,
+                    fecha: saleInfo.fecha_venta ? new Date(saleInfo.fecha_venta) : new Date(),
+                    productos: items?.map((p: any) => ({
+                        cantidad: p.cantidad,
+                        nombre: p.nombre_producto,
+                        importe: p.subtotal
+                    })) || [],
+                    total: totalVenta,
+                    pagoCon: saleInfo.monto_recibido,
+                    cambio: Math.max(0, saleInfo.cambio || 0),
+                    cortar: localStorage.getItem("printer_cut") !== "false"
+                };
+
+                // @ts-ignore
+                await window["electron-api"]?.printTicketVentaEscPos(ticketData);
+                toast.success("Ticket enviado a imprimir");
+            } else {
+                toast.error("No se ha configurado una impresora en ajustes");
+            }
+        } catch (e) {
+            console.error("Error al reimprimir ticket:", e);
+            toast.error("Error al conectar con la impresora");
+        }
+    }
 
     const totalVenta = items.reduce((acc, item) => acc + Number(item.subtotal), 0);
     const totalProductos = items.reduce((acc, item) => acc + Number(item.cantidad), 0);
@@ -115,6 +155,12 @@ export default function DetalleVentaPage() {
                             <p className="text-slate-500 dark:text-slate-400 font-medium">
                                 Registro de transacción #{idVenta}
                             </p>
+                        </div>
+                        <div>
+                            <Button className=" text-black bg-yellow-500 hover:bg-yellow-600 hover:text-black cursor-pointer" onClick={reimprimirTicket} >
+                                <Printer className="w-5 h-5 mr-2" />
+                                Imprimir Ticket
+                            </Button>
                         </div>
                     </div>
 
@@ -230,7 +276,7 @@ export default function DetalleVentaPage() {
                             <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
                                 {items.map((item) => (
                                     <tr
-                                        key={item.id_detalle_venta}
+                                        key={item.id_unidad_venta}
                                         className="group hover:bg-slate-50/80 dark:hover:bg-indigo-500/5 transition-colors duration-200"
                                     >
                                         <td className="px-6 py-4">

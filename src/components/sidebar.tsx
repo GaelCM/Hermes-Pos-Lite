@@ -1,6 +1,6 @@
 
 import * as LucideIcons from "lucide-react";
-import { Plus, UserPlus, X, Lock, LogOut } from "lucide-react"; // Import some specific ones needed locally in JSX
+import { Plus, X, Lock, LogOut } from "lucide-react"; // Import some specific ones needed locally in JSX
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router"
 import { Button } from "./ui/button";
@@ -113,7 +113,7 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
                                 <span className="sm:hidden">Venta</span>
                             </Link>
                         </Button>
-                        <Button
+                        {/*<Button
                             variant="outline"
                             className="w-full justify-start gap-2 bg-transparent text-sm lg:text-base"
                             size="sm"
@@ -122,7 +122,7 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
                             <UserPlus className="w-4 h-4" />
                             <span className="hidden sm:inline">Buscar Cliente (alt+m)</span>
                             <span className="sm:hidden">Cliente</span>
-                        </Button>
+                        </Button>*/}
                     </div>
 
                     <nav className="space-y-1 lg:space-y-2">

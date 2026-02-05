@@ -30,6 +30,10 @@ import UsuariosPage from "./pages/usuarios/usuariosPage"
 import NuevoUsuarioForm from "./pages/usuarios/components/NuevoUsuarioForm"
 import EditarUsuarioForm from "./pages/usuarios/components/EditarUsuarioForm"
 import DetalleVentaPage from "./pages/reportes/ventas/detalleVenta"
+import NuevaCompraForm from "./pages/egresos/components/nuevaCompraForm"
+import MisEgresos from "./pages/reportes/egresos/misEgresos"
+import DetalleCompra from "./pages/egresos/components/detalleCompra"
+import MovimientosPage from "./pages/movimientos/movimientos"
 
 
 
@@ -115,6 +119,14 @@ export const rutas = createHashRouter([
                         element: <EgresosPage />
                     },
                     {
+                        path: "/egresos/nueva-compra",
+                        element: <NuevaCompraForm />
+                    },
+                    {
+                        path: "/egresos/detalle-compra/:id_compra",
+                        element: <DetalleCompra />
+                    },
+                    {
                         path: "/usuarios",
                         element: <UsuariosPage />
                     },
@@ -148,12 +160,20 @@ export const rutas = createHashRouter([
                         element: <VentasPorMes />
                     },
                     {
+                        path: "/reportes/misEgresos",
+                        element: <MisEgresos />
+                    },
+                    {
                         path: "/reportes/stockBajo",
                         element: <BajoStockPage />
                     },
                     {
                         path: "/configuraciones",
                         element: <ListPrints />
+                    },
+                    {
+                        path: "/movimientos",
+                        element: <MovimientosPage />
                     }
                 ]
             }

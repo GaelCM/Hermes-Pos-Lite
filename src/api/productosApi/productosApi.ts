@@ -77,7 +77,7 @@ export const obtenerProductoEspGeneral = async (idProducto: number, idSucursal: 
 }
 
 
-export const actualizarProductoApi = async (id_producto: number, formData: ProductoFormFinal) => {
+export const actualizarProductoApi = async (id_producto: number, formData: ProductoFormFinal, id_usuario: number) => {
     const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/productos/editarProducto`, {
         method: "post",
         headers: {
@@ -86,7 +86,8 @@ export const actualizarProductoApi = async (id_producto: number, formData: Produ
         },
         body: JSON.stringify({
             idProducto: id_producto,
-            formData
+            formData,
+            idUsuario: id_usuario
         })
     });
     const data = await res.json();

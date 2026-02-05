@@ -1,4 +1,5 @@
-import type { ReporteBajoStockResponse } from "@/types/Reportes";
+import type { ReporteEgresoItem } from "@/types/Egresos";
+import type { ReporteBajoStockResponse, ReporteMovimientoItem } from "@/types/Reportes";
 import type { DetalleVentaResponse, ReporteVentaDetallado, ReporteVentasMensualesResponse } from "@/types/ReporteVentasT";
 
 
@@ -23,7 +24,7 @@ export const obtenerReporteMisVentas = async (fechaDesde: string, fechaHasta: st
 
 
 export const obtenerReporteDetalleVenta = async (idVenta: number) => {
-    const res = await fetch(`http://localhost:3000/api/reportes/detalle-venta`, {
+    const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/reportes/detalle-venta`, {
         method: "post",
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('tkn')}`,
@@ -69,4 +70,37 @@ export const obtenerReporteBajoStockApi = async (idSucursal?: number) => {
     return data as ReporteBajoStockResponse;
 }
 
+export const obtenerReporteMovimientosApi = async (fechaDesde: string, fechaHasta: string, idSucursal?: number, tipoMovimiento?: string) => {
+    const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/reportes/movimientos-inventario`, {
+        method: "post",
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('tkn')}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            fecha_desde: fechaDesde,
+            fecha_hasta: fechaHasta,
+            id_sucursal: idSucursal,
+            tipo_movimiento: tipoMovimiento
+        })
+    });
+    const data = await res.json();
+    return data as { success: boolean, message: string, data: ReporteMovimientoItem[] };
+}
 
+export const obtenerReporteMisEgresosApi = async (fechaDesde: string, fechaHasta: string, idSucursal?: number) => {
+    const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/reportes/egresos`, {
+        method: "post",
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('tkn')}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            fecha_desde: fechaDesde,
+            fecha_hasta: fechaHasta,
+            id_sucursal: idSucursal
+        })
+    });
+    const data = await res.json();
+    return data as { success: boolean, message: string, data: ReporteEgresoItem[] };
+}

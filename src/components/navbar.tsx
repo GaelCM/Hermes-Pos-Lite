@@ -1,4 +1,4 @@
-import { Calendar, ChevronDown, FileText, Menu, Package, Search, Settings, TrendingUp, Wifi } from "lucide-react";
+import { Calendar, ChevronDown, DollarSign, FileText, Menu, Package, Search, Settings, TrendingUp, Wifi } from "lucide-react";
 import { Button } from "./ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 
@@ -94,6 +94,16 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
                       </DropdownMenuItem>
 
                       <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Reportes de Egresos</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="gap-2">
+                        <Link to={"reportes/misEgresos"} className="flex items-center gap-2 w-full h-full">
+                          <DollarSign className="w-4 h-4" />
+                          Mis Egresos
+                        </Link>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuSeparator />
                       <DropdownMenuLabel>Reportes de Inventario</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem className="gap-2">
@@ -102,6 +112,8 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
                           Stock Bajo
                         </Link>
                       </DropdownMenuItem>
+
+
 
                     </DropdownMenuContent>
                   </DropdownMenu>

@@ -19,7 +19,8 @@ import {
     ChevronUp,
     Settings,
     Trash,
-    Eye
+    Eye,
+    Search
 } from "lucide-react";
 import { useState } from "react";
 import DialogCancelarVenta from "./DialogCancelarVenta";
@@ -30,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useCurrentUser } from "@/contexts/currentUser";
 import { useNavigate } from "react-router";
+import { Input } from "@/components/ui/input";
 
 interface TablaVentasProps {
     ventas: ReporteVentaDetallado[];
@@ -46,6 +48,7 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
     const [expandedVenta, setExpandedVenta] = useState<number | null>(null);
     const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
     const [ventaToCancel, setVentaToCancel] = useState<number | null>(null);
+    const [searchTerm, setSearchTerm] = useState("");
     const { user } = useCurrentUser();
     const navigate = useNavigate();
 
@@ -58,7 +61,11 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
         }
     };
 
-    const sortedVentas = [...ventas].sort((a, b) => {
+    const filteredVentas = ventas.filter((venta) =>
+        venta.id_venta.toString().toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const sortedVentas = [...filteredVentas].sort((a, b) => {
         let aValue = a[sortField];
         let bValue = b[sortField];
 
@@ -121,8 +128,8 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
         setIsCancelDialogOpen(true);
     };
 
-    const totalVentas = ventas.reduce((sum, venta) => sum + Number(venta.total_venta), 0);
-    const totalProductos = ventas.reduce((sum, venta) => sum + Number(venta.cantidad_productos), 0);
+    const totalVentas = filteredVentas.reduce((sum, venta) => sum + Number(venta.total_venta), 0);
+    const totalProductos = filteredVentas.reduce((sum, venta) => sum + Number(venta.cantidad_productos), 0);
 
     if (loading) {
         return (
@@ -166,7 +173,7 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-blue-700 dark:text-blue-400">{ventas.length}</div>
+                        <div className="text-3xl font-bold text-blue-700 dark:text-blue-400">{filteredVentas.length}</div>
                         <p className="text-xs text-muted-foreground mt-1">
                             Transacciones realizadas
                         </p>
@@ -220,7 +227,7 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold text-amber-700 dark:text-amber-400">
-                            {formatCurrency(totalVentas / ventas.length)}
+                            {formatCurrency(filteredVentas.length > 0 ? totalVentas / filteredVentas.length : 0)}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
                             Promedio por venta
@@ -232,13 +239,26 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
             {/* Tabla de Ventas */}
             <Card className="overflow-hidden">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Receipt className="h-5 w-5" />
-                        Listado de Ventas
-                    </CardTitle>
-                    <CardDescription>
-                        Haz clic en una fila para ver más detalles de la venta
-                    </CardDescription>
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                            <CardTitle className="flex items-center gap-2">
+                                <Receipt className="h-5 w-5" />
+                                Listado de Ventas
+                            </CardTitle>
+                            <CardDescription>
+                                Haz clic en una fila para ver más detalles de la venta
+                            </CardDescription>
+                        </div>
+                        <div className="relative w-full md:w-72">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Buscar por #Folio de venta..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-9 h-10 bg-green-100"
+                            />
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">

@@ -119,10 +119,13 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
 
                                 // @ts-ignore
                                 await window["electron-api"]?.printTicketVentaEscPos(ticketData);
+                                toast.success("Ticket enviado a imprimir");
                             } else {
                                 // @ts-ignore
                                 await window["electron-api"]?.openCashDrawer(printerName);
                             }
+                        } else {
+                            toast.error("No se ha configurado una impresora en ajustes");
                         }
                     } catch (e) {
                         console.error("Error al imprimir ticket offline:", e);

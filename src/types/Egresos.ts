@@ -78,3 +78,19 @@ export interface GastoUpdateInput extends GastoPayload {
 export interface MovimientoEfectivoUpdateInput extends MovimientoPayload {
     id_movimiento: number;
 }
+
+
+export interface ReporteEgresoItem {
+    id: number;
+    tipo_registro: 'Compra' | 'Gasto' | 'Retiro' | 'Deposito';
+    monto: number;
+    fecha: string;
+    descripcion: string | null;
+    folio: string | null;
+    metodo_pago: number | null;
+    metodo_pago_descripcion: string | null;
+    id_sucursal: number;
+    nombre_sucursal: string;
+    id_usuario: number;
+    nombre_usuario: string;
+}

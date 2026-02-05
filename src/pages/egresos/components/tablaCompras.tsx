@@ -20,12 +20,12 @@ import {
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Edit } from "lucide-react";
+import { Plus, Edit, Eye } from "lucide-react";
 
 import type { Compra, CompraPayload } from "@/types/Egresos";
 import { toZonedTime } from "date-fns-tz";
 import { format } from "date-fns";
-import { actualizarCompra, crearCompra, obtenerCompras } from "@/api/egresosApi/compras";
+import { actualizarCompra, obtenerCompras } from "@/api/egresosApi/compras";
 import { useCurrentUser } from "@/contexts/currentUser";
 import { toast } from "sonner";
 import type { Proveedor } from "@/types/Proveedor";
@@ -35,8 +35,10 @@ import { obtenerProveedoresApi } from "@/api/proveedoresApi/proveedoresApi";
 
 
 
-export default function TablaCompras({ turnoId }: { turnoId: number | null }) {
+import { useNavigate } from "react-router";
 
+export default function TablaCompras({ turnoId }: { turnoId: number | null }) {
+    const navigate = useNavigate();
     const timeZone = "America/Mexico_City";
     const now = new Date();
     const zonedDate = toZonedTime(now, timeZone);
@@ -98,15 +100,6 @@ export default function TablaCompras({ turnoId }: { turnoId: number | null }) {
                 if (res.success) {
                     fetchCompras();
                     toast.success("Compra actualizada exitosamente");
-                    handleCloseModal()
-                }
-            } else {
-                const res = await crearCompra(payload)
-                if (res.success) {
-                    fetchCompras();
-                    toast.success("Compra creada exitosamente", {
-                        description: `${res.data.id_compra}`
-                    });
                     handleCloseModal()
                 }
             }
@@ -174,7 +167,7 @@ export default function TablaCompras({ turnoId }: { turnoId: number | null }) {
             </section>
 
             <div className="flex justify-end mb-4">
-                <Button onClick={() => handleOpenModal()}>
+                <Button onClick={() => navigate("/egresos/nueva-compra")}>
                     <Plus className="mr-2 h-4 w-4" /> Nueva Compra
                 </Button>
             </div>
@@ -221,7 +214,7 @@ export default function TablaCompras({ turnoId }: { turnoId: number | null }) {
                                             <TableCell>{item.id_proveedor}</TableCell>
                                             <TableCell className="font-medium">${Number(item.monto).toFixed(2)}</TableCell>
                                             <TableCell>{item.folio || '-'}</TableCell>
-                                            <TableCell>{item.metodo_pago === 1 ? "Efectivo" : "Tarjeta"}</TableCell>
+                                            <TableCell>{item.metodo_pago === 0 ? "Efectivo" : "Tarjeta"}</TableCell>
                                             <TableCell>{item.descripcion}</TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-2">
@@ -230,6 +223,17 @@ export default function TablaCompras({ turnoId }: { turnoId: number | null }) {
                                                     </Button>
 
                                                 </div>
+                                            </TableCell>
+                                            <TableCell className="px-6 py-4">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => navigate(`/egresos/detalle-compra/${item.id_compra}`)}
+                                                    className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                                                >
+                                                    <Eye className="w-4 h-4 mr-1" />
+                                                    Ver
+                                                </Button>
                                             </TableCell>
                                         </TableRow>
                                     )))}

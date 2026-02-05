@@ -18,10 +18,12 @@ import DialogSetGranel from "@/pages/home/components/dialogSetGranel"
 type Props = {
   idSucursal: number
   inputRef?: React.RefObject<{ focus: () => void } | null>;
-  searchLocal?: boolean
+  searchLocal?: boolean;
+  onAddProduct?: (product: ProductoVenta, quantity?: number) => void;
+  allowOutOfStock?: boolean;
 }
 
-export function ProductTable({ idSucursal, inputRef, searchLocal = false }: Props) {
+export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddProduct, allowOutOfStock = false }: Props) {
   const [productos, setProductos] = useState<ProductoVenta[]>([])
   const { user } = useCurrentUser();
   const [filteredProductos, setFilteredProductos] = useState<ProductoVenta[]>([])
@@ -30,36 +32,38 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false }: Prop
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const tableRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const { addProduct } = useListaProductos();
+  const { addProduct: addProductVenta } = useListaProductos();
 
   // Estados para Granel
   const [openGranel, setOpenGranel] = useState(false);
   const [productoGranelPendiente, setProductoGranelPendiente] = useState<ProductoVenta | null>(null);
+
+  const addProductFn = onAddProduct || addProductVenta;
 
   const handleTryAddProduct = useCallback((p: ProductoVenta) => {
     if (searchLocal && Boolean(p.es_granel)) {
       setProductoGranelPendiente(p);
       setOpenGranel(true);
     } else {
-      addProduct(p);
+      addProductFn(p);
       toast.success("Producto agregado correctamente");
       setTimeout(() => {
         inputRef?.current?.focus();
         searchInputRef.current?.focus();
       }, 100);
     }
-  }, [searchLocal, addProduct, inputRef]);
+  }, [searchLocal, addProductFn, inputRef]);
 
   const handleConfirmGranel = useCallback((cantidad: number) => {
     if (productoGranelPendiente) {
-      addProduct(productoGranelPendiente, cantidad);
+      addProductFn(productoGranelPendiente, cantidad);
       toast.success("Producto agregado correctamente");
       setTimeout(() => {
         inputRef?.current?.focus();
         searchInputRef.current?.focus();
       }, 100);
     }
-  }, [productoGranelPendiente, addProduct, inputRef]);
+  }, [productoGranelPendiente, addProductFn, inputRef]);
 
   const loadProducts = async (forceApi = false) => {
     setLoading(true)
@@ -149,7 +153,7 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false }: Prop
         case 'Enter': {
           e.preventDefault();
           const selectedProduct = pageItems[selectedIndex];
-          if (selectedProduct && selectedProduct.stock_disponible_presentacion > 0) {
+          if (selectedProduct && (allowOutOfStock || selectedProduct.stock_disponible_presentacion > 0)) {
             handleTryAddProduct(selectedProduct);
           }
           break;
@@ -244,7 +248,7 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false }: Prop
                   className={`align-top border-t cursor-pointer transition-colors ${isSelected
                     ? 'bg-primary/10 border-primary shadow-sm'
                     : 'hover:bg-muted/50'
-                    } ${outStock ? 'opacity-50' : ''}`}
+                    } ${outStock && !allowOutOfStock ? 'opacity-50' : ''}`}
                 >
                   <td className="px-3 py-3 align-middle text-sm text-muted-foreground">{p.sku_presentacion}</td>
                   <td className="px-3 py-3 align-middle">
@@ -288,7 +292,7 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false }: Prop
                         e.stopPropagation();
                         handleTryAddProduct(p)
                       }}
-                      disabled={outStock}
+                      disabled={outStock && !allowOutOfStock}
                       aria-label={`Agregar ${p.nombre_producto} al carrito`}
                     >
                       <ShoppingCart></ShoppingCart>

@@ -10,6 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useCurrentUser } from "@/contexts/currentUser";
 import type { Categoria } from "@/types/Categoria";
 import type { ProductoFormFinal } from "@/types/Producto";
 import type { Sucursal } from "@/types/Sucursal";
@@ -63,7 +64,7 @@ export default function EditarProductoForm() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-
+  const { user } = useCurrentUser();
   const [sucursales, setSucursales] = useState<Sucursal[]>([]);
 
 
@@ -132,7 +133,7 @@ export default function EditarProductoForm() {
   const onSubmit = async (values: FormValues) => {
     setUpdating(true);
     try {
-      const data = await actualizarProductoApi(parseInt(id_producto!), values as ProductoFormFinal);
+      const data = await actualizarProductoApi(parseInt(id_producto!), values as ProductoFormFinal, user?.id_usuario || 1);
       if (data.success) {
         toast.success(data.message);
         window.history.back();
@@ -228,7 +229,17 @@ export default function EditarProductoForm() {
     const curr = form.getValues("sucursales_inventario") || [];
     const exists = curr.find((s: any) => s.id_sucursal === idSucursal);
     if (exists) {
-      form.setValue("sucursales_inventario", curr.filter((s: any) => s.id_sucursal !== idSucursal));
+      // 1. Remover de inventario
+      const updatedInventario = curr.filter((s: any) => s.id_sucursal !== idSucursal);
+      form.setValue("sucursales_inventario", updatedInventario);
+
+      // 2. Mantener consistencia: remover de la venta en todas las variantes
+      const currentVariantes = form.getValues("variantes");
+      const updatedVariantes = currentVariantes.map(v => ({
+        ...v,
+        sucursales_venta: v.sucursales_venta.filter(sv => sv.id_sucursal !== idSucursal)
+      }));
+      form.setValue("variantes", updatedVariantes);
     } else {
       form.setValue("sucursales_inventario", [...curr, { id_sucursal: idSucursal, cantidad_actual: 0, cantidad_minima: 0 }]);
     }
@@ -677,7 +688,10 @@ export default function EditarProductoForm() {
                 ) : (
                   <Button
                     type="button"
-                    onClick={() => form.handleSubmit(onSubmit)()}
+                    onClick={() => form.handleSubmit(onSubmit, (errors) => {
+                      console.log('Errores de validación:', errors);
+                      toast.error("Por favor revisa que todos los campos obligatorios estén llenos y los precios sean mayores a 0.");
+                    })()}
                     className="bg-blue-600 text-white"
                     disabled={updating}
                   >

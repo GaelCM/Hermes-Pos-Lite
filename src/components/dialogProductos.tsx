@@ -23,15 +23,18 @@ export default function DialogProducto({ isOpen, setIsOpen, idSucursal, inputRef
                     overflow-hidden 
 
                     /* WEB */
-                    md:max-w-[1200px] 
-                    md:w-[90vw] 
-                    md:h-[90vh] 
+                    md:max-w-4xl 
+                    md:w-full
+                    md:h-[85vh] 
+                    md:rounded-lg
+                    md:border 
 
                     /* MÓVIL (FULL SCREEN) */
                     max-w-[100vw] 
                     w-screen 
                     h-screen 
                     rounded-none
+                    border-none
                 "
             >
                 {/* HEADER RESPONSIVE */}

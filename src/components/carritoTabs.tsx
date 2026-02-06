@@ -57,9 +57,9 @@ export default function CarritoTabs() {
           {carritos.map((carrito) => (
             <div
               key={carrito.id}
-              className={`flex items-center gap-1 px-3 py-1 rounded-md whitespace-nowrap cursor-pointer transition-colors shrink-0 ${carritoActivo === carrito.id
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted hover:bg-muted/80 text-muted-foreground"
+              className={`flex items-center gap-2 pl-4 pr-1 py-1 rounded-full whitespace-nowrap cursor-pointer transition-all shrink-0 border select-none ${carritoActivo === carrito.id
+                ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                : "bg-background hover:bg-muted text-muted-foreground border-border"
                 }`}
             >
               {editingId === carrito.id ? (
@@ -75,29 +75,31 @@ export default function CarritoTabs() {
                       setEditingName("");
                     }
                   }}
-                  className="h-6 text-xs w-24"
+                  className="h-6 text-xs w-24 bg-transparent border-none focus-visible:ring-0 px-0 text-inherit"
                 />
               ) : (
                 <>
                   <span
                     onClick={() => cambiarCarritoActivo(carrito.id)}
                     onDoubleClick={() => handleRename(carrito.id, carrito.nombre)}
-                    className="flex-1"
+                    className="flex-1 font-semibold text-sm"
                   >
                     {carrito.nombre}
-                    <span className="text-xs ml-1 opacity-70">({carrito.productos.length})</span>
+                    <span className="text-xs ml-1 opacity-80 font-normal">({carrito.productos.length})</span>
                   </span>
-                  {/* Botón de eliminar (si hay más de 1 carrito o simplemente permitir borrar siempre y que quede vacío) */}
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size="icon"
                     onClick={(e) => {
                       e.stopPropagation();
                       setDeleteId(carrito.id);
                     }}
-                    className="w-5 h-5 p-0 hover:bg-destructive/20"
+                    className={`w-6 h-6 rounded-full ml-1 ${carritoActivo === carrito.id
+                      ? "hover:bg-primary-foreground/20 text-primary-foreground/80 hover:text-primary-foreground"
+                      : "hover:bg-destructive/10 hover:text-destructive"
+                      }`}
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-3.5 h-3.5" />
                   </Button>
                 </>
               )}

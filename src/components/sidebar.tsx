@@ -83,49 +83,34 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
     return (
         <>
             {sidebarOpen && (
-                <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+                <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
             )}
 
             {/* Sidebar */}
-            <div
-                className={`
-                ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} 
-                lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 
-                w-64 bg-sidebar border-r border-sidebar-border transition-transform duration-300 ease-in-out
-            `}
-            >
-                <div className="p-4 lg:p-6">
-                    <div className="flex items-center justify-between mb-6 lg:mb-8">
+            {/* Sidebar */}
+            <div className={`sidebar-container ${sidebarOpen ? "open" : ""}`}>
+                <div className="sidebar-content">
+                    <div className="flex items-center justify-between mb-6 md:mb-8">
                         <div className="flex items-center gap-2">
                             <img src={logo} alt="" className="w-52 h-42" />
                         </div>
-                        <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setSidebarOpen(false)}>
+                        <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setSidebarOpen(false)}>
                             <X className="w-4 h-4" />
                         </Button>
                     </div>
 
-                    <div className="space-y-2 mb-4 lg:mb-6">
+                    <div className="space-y-2 mb-4 md:mb-6">
 
-                        <Button className="w-full justify-start gap-2 text-sm lg:text-base" size="sm">
-                            <Link to={"/"} className="flex w-full justify-start items-center gap-2 text-sm lg:text-base">
+                        <Button className="w-full justify-start gap-2 text-sm md:text-base" size="sm">
+                            <Link to={"/"} className="flex w-full justify-start items-center gap-2 text-sm md:text-base">
                                 <Plus className="w-4 h-4" />
                                 <span className="hidden sm:inline">Nueva Venta</span>
                                 <span className="sm:hidden">Venta</span>
                             </Link>
                         </Button>
-                        {/*<Button
-                            variant="outline"
-                            className="w-full justify-start gap-2 bg-transparent text-sm lg:text-base"
-                            size="sm"
-                            onClick={() => { setOpen(true) }}
-                        >
-                            <UserPlus className="w-4 h-4" />
-                            <span className="hidden sm:inline">Buscar Cliente (alt+m)</span>
-                            <span className="sm:hidden">Cliente</span>
-                        </Button>*/}
                     </div>
 
-                    <nav className="space-y-1 lg:space-y-2">
+                    <nav className="space-y-1 md:space-y-2">
                         {sidebarItemsFiltrados.map((item) => {
                             const Icon = item.icon;
                             return (
@@ -135,26 +120,25 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
                                     onClick={() => {
                                         setSidebarOpen(false); // Cerrar sidebar en móvil al seleccionar
                                     }}
-                                    className={`w-full flex items-center gap-2 lg:gap-3 px-2 lg:px-3 py-2 rounded-lg text-left transition-colors text-sm lg:text-base ${rutaActual === item.ruta
+                                    className={`w-full flex items-center gap-2 md:gap-3 px-2 md:px-3 py-2 rounded-lg text-left transition-colors text-sm md:text-base ${rutaActual === item.ruta
                                         ? "bg-primary text-sidebar-primary-foreground"
                                         : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                                         }`}
                                 >
-                                    <Icon className="w-4 h-4 lg:w-5 lg:h-5 shrink-0" />
+                                    <Icon className="w-4 h-4 md:w-5 md:h-5 shrink-0" />
                                     <span className="truncate">{item.label}</span>
                                 </Link>
                             );
                         })}
                     </nav>
 
-                    {/* Fin contenido sidebar */}
                 </div>
-                {/* Perfil de usuario al fondo, fuera del contenido principal */}
-                <div className="absolute bottom-0 left-0 w-full p-4 border-t border-sidebar-border bg-sidebar/80 flex items-center gap-3">
+                {/* Perfil de usuario al fondo */}
+                <div className="sidebar-footer flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-lg font-bold text-primary">
                         {user?.usuario?.[0]?.toUpperCase() || "U"}
                     </div>
-                    <div className="flex flex-col min-w-0">
+                    <div className="flex flex-col min-w-0 flex-1">
                         <span className="font-semibold text-sidebar-foreground truncate">{user?.usuario}</span>
                         <span className="text-xs text-sidebar-foreground/70 truncate">{user?.email}</span>
                         <span className="text-xs text-sidebar-foreground/70 truncate">{user?.rol}</span>

@@ -25,14 +25,14 @@ interface BadgeProps {
 const Badge = ({ children, variant = 'default' }: BadgeProps) => {
   const variants = {
     default: 'bg-gray-100 text-gray-800',
-    pending: 'bg-yellow-100 text-yellow-800',
-    transit: 'bg-blue-100 text-blue-800',
-    received: 'bg-green-100 text-green-800',
-    cancelled: 'bg-red-100 text-red-800'
+    pending: 'badge-pending',
+    transit: 'badge-transit',
+    received: 'badge-received',
+    cancelled: 'badge-cancelled'
   };
 
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${variants[variant]}`}>
+    <span className={`status-badge ${variants[variant]}`}>
       {children}
     </span>
   );
@@ -43,8 +43,10 @@ interface CardProps {
   className?: string;
 }
 const Card = ({ children, className = '' }: CardProps) => (
-  <div className={`bg-white rounded-lg border border-gray-200 shadow-sm ${className}`}>
-    {children}
+  <div className={`transfer-card ${className}`}>
+    <div className="transfer-card-content">
+      {children}
+    </div>
   </div>
 );
 
@@ -58,24 +60,24 @@ interface ButtonProps {
 }
 const Button = ({ children, variant = 'default', size = 'md', onClick, className = '', disabled = false }: ButtonProps) => {
   const variants = {
-    default: 'bg-blue-600 hover:bg-blue-700 text-white',
-    outline: 'border border-gray-300 bg-white hover:bg-gray-50 text-gray-700',
-    ghost: 'hover:bg-gray-100 text-gray-700',
-    success: 'bg-green-600 hover:bg-green-700 text-white',
-    danger: 'bg-red-600 hover:bg-red-700 text-white'
+    default: 'btn-primary',
+    outline: 'bg-white border text-gray-700 hover:bg-gray-50',
+    ghost: 'btn-ghost',
+    success: 'btn-success',
+    danger: 'btn-danger'
   };
 
   const sizes = {
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-4 py-2 text-sm',
-    lg: 'px-6 py-3 text-base'
+    sm: 'text-xs px-2 py-1',
+    md: 'px-4 py-2',
+    lg: 'px-6 py-3'
   };
 
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`action-btn ${variants[variant]} ${sizes[size]} ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
     >
       {children}
     </button>
@@ -98,34 +100,22 @@ interface TabsProps {
 
 const Tabs = ({ tabs, activeTab, onChange }: TabsProps) => {
   return (
-    <div className="border-b border-gray-200">
-      <nav className="flex -mb-px space-x-8">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => onChange(tab.id)}
-            className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${activeTab === tab.id
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-          >
-            <div className="flex items-center gap-2">
-              {tab.icon}
-              {tab.label}
-              {tab.count && tab.count > 0 && (
-                <span
-                  className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${activeTab === tab.id
-                    ? "bg-blue-100 text-blue-600"
-                    : "bg-gray-100 text-gray-600"
-                    }`}
-                >
-                  {tab.count}
-                </span>
-              )}
-            </div>
-          </button>
-        ))}
-      </nav>
+    <div className="transfer-tabs">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => onChange(tab.id)}
+          className={`transfer-tab-btn ${activeTab === tab.id ? "active" : ""}`}
+        >
+          {tab.icon}
+          {tab.label}
+          {tab.count && tab.count > 0 && (
+            <span className="tab-count">
+              {tab.count}
+            </span>
+          )}
+        </button>
+      ))}
     </div>
   );
 };
@@ -172,7 +162,7 @@ const formatFecha = (fecha: string | number | Date) => {
 
 const TablaTransferencias = ({ transferencias, onEnviar, onCancelar, onVerDetalle, mostrarAcciones = true, loading }: TablaTransferenciasProps) => {
   return (
-    <div className="overflow-x-auto">
+    <div className="transfer-table-container">
 
       {loading ? (
         <div className="text-center p-35">
@@ -181,29 +171,29 @@ const TablaTransferencias = ({ transferencias, onEnviar, onCancelar, onVerDetall
         </div>
       )
         : (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="transfer-table">
+            <thead>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left">
                   ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left">
                   Estado
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left">
                   Origen → Destino
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left">
                   Fecha Envío
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left">
                   Productos
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left">
                   Motivo
                 </th>
                 {mostrarAcciones && (
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right">
                     Acciones
                   </th>
                 )}
@@ -313,59 +303,57 @@ const TransferenciasPendientesRecibir = ({ transferencias, onRecibir }: Transfer
   return (
     <div className="space-y-4">
       {transferencias.map((transferencia: TransferenciaDTO) => (
-        <Card key={transferencia.id_transferencia} className="p-6">
-          <div className="flex justify-center items-center">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="bg-blue-100 p-2 rounded-lg">
-                  <PackageCheck className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Transferencia #{transferencia.id_transferencia}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    De: <span className="font-medium text-gray-700">{transferencia.sucursal_origen}</span>
-                  </p>
-                </div>
+        <Card key={transferencia.id_transferencia} className="pending-card">
+          <div className="pending-info">
+            <div className="pending-header">
+              <div className="bg-blue-100 p-2 rounded-lg">
+                <PackageCheck className="w-5 h-5 text-blue-600" />
               </div>
-
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Enviado por</p>
-                  <p className="text-sm font-medium text-gray-900">{transferencia.usuario_origen}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Fecha de envío</p>
-                  <p className="text-sm font-medium text-gray-900">{formatFecha(transferencia.fecha_envio)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Productos</p>
-                  <p className="text-sm font-medium text-gray-900">
-                    {transferencia.total_productos} productos ({transferencia.total_piezas} piezas)
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Estado</p>
-                  {getEstadoBadge(transferencia.estado)}
-                </div>
-              </div>
-
-              <div className="bg-gray-50 p-3 rounded-md">
-                <p className="text-xs text-gray-500 mb-1">Motivo</p>
-                <p className="text-sm text-gray-700">{transferencia.motivo}</p>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Transferencia #{transferencia.id_transferencia}
+                </h3>
+                <p className="text-sm text-gray-500">
+                  De: <span className="font-medium text-gray-700">{transferencia.sucursal_origen}</span>
+                </p>
               </div>
             </div>
 
-            <div className="flex flex-col gap-2 ml-6">
-              <Button
-                variant="success"
-                onClick={() => onRecibir(transferencia.id_transferencia)}
-              >
-                <PackageCheck className="w-4 h-4" />
-                Recibir
-              </Button>
+            <div className="pending-grid">
+              <div>
+                <p className="info-label">Enviado por</p>
+                <p className="info-value">{transferencia.usuario_origen}</p>
+              </div>
+              <div>
+                <p className="info-label">Fecha de envío</p>
+                <p className="info-value">{formatFecha(transferencia.fecha_envio)}</p>
+              </div>
+              <div>
+                <p className="info-label">Productos</p>
+                <p className="info-value">
+                  {transferencia.total_productos} productos ({transferencia.total_piezas} piezas)
+                </p>
+              </div>
+              <div>
+                <p className="info-label">Estado</p>
+                {getEstadoBadge(transferencia.estado)}
+              </div>
             </div>
+
+            <div className="bg-gray-50 p-3 rounded-md">
+              <p className="info-label">Motivo</p>
+              <p className="text-sm text-gray-700">{transferencia.motivo}</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 ml-6">
+            <Button
+              variant="success"
+              onClick={() => onRecibir(transferencia.id_transferencia)}
+            >
+              <PackageCheck className="w-4 h-4" />
+              Recibir
+            </Button>
           </div>
         </Card>
       ))}
@@ -490,12 +478,12 @@ export default function MisTransferencias() {
   ];
 
   return (
-    <div className="bg-gray-50 p-6">
+    <div className="p-0">
       <DialogConfirmarAceptarTranseferencia isOpen={isOpen} setIsOpen={setIsOpen} idTransferencia={idTransferencia} />
       <div className="mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-3 mb-2 transferencias-header-content">
             <div className="bg-blue-100 p-2 rounded-lg">
               <ArrowRightLeft className="w-6 h-6 text-blue-600" />
             </div>
@@ -503,7 +491,7 @@ export default function MisTransferencias() {
               Transferencias de Productos
             </h1>
           </div>
-          <p className="text-gray-600">
+          <p className="text-gray-600 text-center">
             {user.id_rol === 1
               ? 'Vista de administrador - Todas las sucursales'
               : `Transferencias de ${user.sucursal}`
@@ -525,13 +513,14 @@ export default function MisTransferencias() {
           <Card>
 
             <div>
-              <section className="flex flex-col items-center justify-center gap-4">
-                <div className="flex gap-2 items-center p-5">
-                  <p className="text-xl font-bold text-primary p-5">Fecha desde</p>
-                  <input type="date" defaultValue={fechaDesde} onChange={(e) => setFechaDesde(e.target.value)} />
-                  <p>-</p>
-                  <p className="text-xl font-bold text-primary p-5">Fecha hasta</p>
-                  <input type="date" defaultValue={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)} />
+              <section className="transfer-filters">
+                <div className="date-input-group">
+                  <p className="font-bold text-primary">Fecha desde</p>
+                  <input type="date" className="date-input" defaultValue={fechaDesde} onChange={(e) => setFechaDesde(e.target.value)} />
+                </div>
+                <div className="date-input-group">
+                  <p className="font-bold text-primary">Fecha hasta</p>
+                  <input type="date" className="date-input" defaultValue={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)} />
                 </div>
               </section>
 

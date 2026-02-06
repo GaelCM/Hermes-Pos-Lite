@@ -1,5 +1,5 @@
-import { ipcMain } from "electron";
-import db from "../db.js";
+const { ipcMain } = require("electron");
+const db = require("../db.js");
 
 function offlineController() {
     // Sincronizar catálogo de productos completo
@@ -110,4 +110,4 @@ function offlineController() {
     });
 }
 
-export { offlineController };
+module.exports = { offlineController };

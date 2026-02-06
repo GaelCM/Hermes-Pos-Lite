@@ -1,5 +1,5 @@
 {
-    "appId": "com.electron.hermesPos",
+    "appId": "com.electron.hermesPosLite",
     "icon": "./src/electron/logo.jpg",
     "files": [
         "dist-react/**/*",

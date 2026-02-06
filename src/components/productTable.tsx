@@ -256,7 +256,7 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
                   </td>
 
                   <td className="px-3 py-3 align-middle text-sm ">
-                    <Badge className={`${p.es_granel ? 'bg-green-600' : p.nombre_presentacion === "Pieza" ? 'bg-blue-600' : 'bg-orange-600'}`}>{p.es_granel ? "Granel" : p.nombre_presentacion}</Badge>
+                    <Badge className={`${p.es_granel ? 'bg-black' : p.nombre_presentacion === "Pieza" ? 'bg-primary' : 'bg-orange-600'}`}>{p.es_granel ? "Granel" : p.nombre_presentacion}</Badge>
                   </td>
 
                   <td className="px-3 py-3 align-middle">

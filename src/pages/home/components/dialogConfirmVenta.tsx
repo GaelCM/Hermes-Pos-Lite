@@ -229,60 +229,75 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
 
 
 
-                            <h1 className="text-4xl text-center p-2">PAGÓ CON:</h1>
-                            <div className="flex justify-center p-2">
-                                <input
-                                    type="text"
-                                    className="text-6xl text-center font-bold w-[50%] bg-blue-100 border-2 border-blue-600"
-                                    autoFocus
-                                    onChange={(e) => {
-                                        setCambioEfectivo(Number(e.target.value))
-                                    }}
-                                /*onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        nuevaVenta()
-                                    }
-                                }}*/
-                                />
+                            <h1 className="text-4xl text-center p-2 font-light text-muted-foreground">PAGÓ CON:</h1>
+                            <div className="flex justify-center p-2 mb-8">
+                                <div className="relative w-1/2">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-4xl font-bold text-muted-foreground">$</span>
+                                    <input
+                                        type="number"
+                                        className="w-full text-6xl text-center font-bold bg-background border-b-4 border-primary focus:outline-hidden focus:border-primary/70 transition-colors h-24 placeholder:text-muted-foreground/20"
+                                        autoFocus
+                                        placeholder="0.00"
+                                        onChange={(e) => {
+                                            setCambioEfectivo(Number(e.target.value))
+                                        }}
+                                    />
+                                </div>
                             </div>
 
                             {/* Actions */}
-                            <div className="flex gap-3">
-                                <Button onClick={() => nuevaVenta(true)} className="flex-1 bg-green-700" disabled={metodoPago === undefined}>
-                                    Completar e imprimir ticket (F1)
+                            <div className="flex gap-4">
+                                <Button onClick={() => nuevaVenta(true)} className="flex-1 h-14 text-lg bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20" disabled={metodoPago === undefined}>
+                                    <span className="flex flex-col items-center leading-none gap-1">
+                                        <span>Cobrar e Imprimir</span>
+                                        <span className="text-[10px] font-normal opacity-80">Tecla F1</span>
+                                    </span>
                                 </Button>
-                                <Button onClick={() => nuevaVenta(false)} className="flex-1 bg-yellow-700" disabled={metodoPago === undefined}>
-                                    Completar sin imprimir ticket (F2)
+                                <Button onClick={() => nuevaVenta(false)} variant="secondary" className="flex-1 h-14 text-lg border border-input shadow-xs" disabled={metodoPago === undefined}>
+                                    <span className="flex flex-col items-center leading-none gap-1">
+                                        <span>Cobrar sin Ticket</span>
+                                        <span className="text-[10px] font-normal opacity-80">Tecla F2</span>
+                                    </span>
                                 </Button>
-                                <Button variant="destructive" onClick={() => onClose(false)} className="flex-1" >
-                                    Cancelar
+                                <Button variant="destructive" onClick={() => onClose(false)} className="h-14 aspect-square p-0" title="Cancelar">
+                                    <div className="flex flex-col items-center justify-center">
+                                        <span className="text-xl font-bold">×</span>
+                                    </div>
                                 </Button>
                             </div>
                         </>
                     )}
 
                     {estado === "Cargando" && (
-                        <div className="py-12 flex flex-col items-center justify-center gap-4">
-                            <div className="animate-spin">
-                                <Loader2 className="h-8 w-8 text-primary" />
+                        <div className="py-12 flex flex-col items-center justify-center gap-4 animate-in fade-in zoom-in-95 duration-300">
+                            <div className="animate-spin p-4 rounded-full bg-primary/10">
+                                <Loader2 className="h-12 w-12 text-primary" />
                             </div>
-                            <p className="text-sm text-muted-foreground">Procesando la venta, por favor espera...</p>
+                            <p className="text-lg font-medium text-foreground">Procesando venta...</p>
                         </div>
                     )}
 
                     {estado === "Listo" && (
-                        <div className="py-12 flex flex-col items-center justify-center gap-4">
-                            <div className="p-3 rounded-full bg-green-200 text-green-500">
-                                <Check className="h-18 w-18" />
+                        <div className="py-8 flex flex-col items-center justify-center gap-6 animate-in fade-in zoom-in-95 duration-500">
+                            <div className="p-4 rounded-full bg-primary/10 text-primary ring-8 ring-primary/5">
+                                <Check className="h-20 w-20" />
                             </div>
-                            <p className="text-xl font-semibold">Venta procesada</p>
-                            <p className="text-sm text-muted-foreground">La venta se completó correctamente.</p>
+                            <div className="text-center space-y-2">
+                                <p className="text-3xl font-bold text-foreground">¡Venta Exitosa!</p>
+                                <p className="text-muted-foreground">La transacción se ha registrado correctamente.</p>
+                            </div>
+
                             {metodoPago === 0 && (
-                                <p className="text-6xl font-bold">Cambio: ${Math.max(0, (cambioEfectivo - getTotalPrice())).toFixed(2)}</p>
+                                <div className="bg-muted/50 p-6 rounded-2xl border border-border w-full max-w-sm text-center">
+                                    <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Su Cambio</p>
+                                    <p className="text-6xl font-black text-primary tracking-tighter">
+                                        ${Math.max(0, (cambioEfectivo - getTotalPrice())).toFixed(2)}
+                                    </p>
+                                </div>
                             )}
-                            <div className="w-full flex gap-2 mt-4">
-                                <Button className="flex-1" autoFocus onClick={reloadVenta}>
-                                    Cerrar
+                            <div className="w-full max-w-sm flex gap-2 mt-4">
+                                <Button className="flex-1 h-12 text-lg shadow-lg shadow-primary/20" autoFocus onClick={reloadVenta}>
+                                    Nueva Venta (Enter)
                                 </Button>
                             </div>
                         </div>

@@ -1,0 +1,123 @@
+/* Layout Nueva Compra */
+.new-purchase-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    height: calc(100vh - 4rem);
+    /* Adjusting for header if needed, similar to transferencias */
+    padding: 1rem;
+    max-width: 1600px;
+    margin: 0 auto;
+    background-color: hsl(var(--background));
+}
+
+@media (min-width: 768px) {
+    .new-purchase-container {
+        flex-direction: row;
+        height: calc(100vh - 5rem);
+    }
+}
+
+/* Paneles */
+.purchase-panel {
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.purchase-left {
+    flex: 1;
+    min-width: 0;
+}
+
+.purchase-right {
+    width: 100%;
+    border-left: 4px solid hsla(var(--primary), 0.2);
+    background-color: hsl(var(--card));
+}
+
+@media (min-width: 768px) {
+    .purchase-right {
+        width: 380px;
+        flex-shrink: 0;
+    }
+}
+
+.p-panel-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid hsl(var(--border));
+    background-color: hsl(var(--muted) / 0.3);
+}
+
+.p-panel-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: hsl(var(--foreground));
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.p-panel-content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 1.25rem;
+    gap: 1rem;
+}
+
+/* Estilos para el carrito (reusando lógica visual) */
+.cart-item {
+    padding: 0.75rem;
+    background-color: hsl(var(--background));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    margin-bottom: 0.75rem;
+}
+
+.cart-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.cart-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: hsl(var(--secondary));
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+}
+
+/* Formulario en panel derecho */
+.purchase-form-footer {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid hsl(var(--border));
+    background-color: hsl(var(--muted) / 0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.info-badge {
+    font-size: 0.875rem;
+    font-weight: normal;
+    background-color: hsl(var(--primary) / 0.1);
+    color: hsl(var(--primary));
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+}
+
+/* Overrides para ProductTable dentro del panel */
+.purchase-left .p-panel-content {
+    padding: 0 !important;
+    /* ProductTable tiene su propio padding/layout */
+}

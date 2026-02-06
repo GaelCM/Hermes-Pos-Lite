@@ -1,8 +1,9 @@
-import { ipcMain, BrowserWindow } from "electron";
-import { exec } from "child_process";
-import fs from 'fs';
-import path from 'path';
-import os from 'os';
+const { ipcMain, BrowserWindow } = require("electron");
+const { exec } = require("child_process");
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+const { ThermalPrinter, PrinterTypes } = require('node-thermal-printer');
 
 // Helper para enviar datos RAW a la impresora en Windows usando P/Invoke desde PowerShell
 const executeRawPrint = async (printerName, buffer, docName = "Hermes POS Print") => {
@@ -138,7 +139,6 @@ function utilsController() {
         if (!printerName) return false;
 
         try {
-            const { ThermalPrinter, PrinterTypes } = await import('node-thermal-printer');
             let printer = new ThermalPrinter({
                 type: PrinterTypes.EPSON,
                 interface: 'tcp://127.0.0.1', // dummy
@@ -156,8 +156,6 @@ function utilsController() {
     ipcMain.handle('print-test-escpos', async (event, printerName) => {
         console.log("Probando impresión ESC/POS (MODO RAW FILE) en:", printerName);
         try {
-            const { ThermalPrinter, PrinterTypes } = await import('node-thermal-printer');
-
             let printer = new ThermalPrinter({
                 type: PrinterTypes.EPSON,
                 interface: 'tcp://127.0.0.1',
@@ -201,8 +199,6 @@ function utilsController() {
         console.log("Generando TICKET VENTA ESC/POS para:", printerName);
 
         try {
-            const { ThermalPrinter, PrinterTypes } = await import('node-thermal-printer');
-
             let printer = new ThermalPrinter({
                 type: PrinterTypes.EPSON,
                 interface: 'tcp://127.0.0.1',
@@ -280,8 +276,6 @@ function utilsController() {
         console.log("Generando TICKET MOVIMIENTO ESC/POS para:", printerName);
 
         try {
-            const { ThermalPrinter, PrinterTypes } = await import('node-thermal-printer');
-
             let printer = new ThermalPrinter({
                 type: PrinterTypes.EPSON,
                 interface: 'tcp://127.0.0.1',
@@ -405,4 +399,4 @@ function utilsController() {
     });
 }
 
-export { utilsController };
+module.exports = { utilsController };

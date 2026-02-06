@@ -163,7 +163,7 @@ export default function DashboardAdmon() {
                         </div>
 
                         {/* Total vendido */}
-                        <div className="bg-blue-500 flex flex-col items-center justify-center text-white p-2 rounded">
+                        <div className="bg-primary flex flex-col items-center justify-center text-white p-2 rounded">
                             <span className="total-label">Total Vendido</span>
                             <span className="total-value">{formatCurrency(turno.estadisticas.total_vendido)}</span>
                         </div>

@@ -34,12 +34,12 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
 
   return (
     <>
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="main-wrapper">
         {/* Header */}
-        <header className="bg-card border-b border-border px-4 lg:px-6 py-3 lg:py-4">
+        <header className="navbar-header">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setSidebarOpen(true)}>
+              <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setSidebarOpen(true)}>
                 <Menu className="w-5 h-5" />
               </Button>
               <div className="min-w-0 flex">
@@ -54,22 +54,22 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 lg:gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               <div className="relative hidden sm:block">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" color="white" />
                 <Button variant={"default"} className="px-10 cursor-pointer" onClick={openDialog}>Buscar Producto (F10)</Button>
               </div>
 
               <div className="flex items-center gap-2">
-                <div className="hidden md:flex items-center gap-1 text-xs lg:text-sm text-muted-foreground">
-                  <Wifi className="w-3 h-3 lg:w-4 lg:h-4 text-green-500" />
+                <div className="hidden md:flex items-center gap-1 text-xs md:text-sm text-muted-foreground">
+                  <Wifi className="w-3 h-3 md:w-4 md:h-4 text-green-500" />
                   <span>Online</span>
                 </div>
 
               </div>
 
               {user.id_rol === 1 && (
-                <div className="hidden lg:flex items-center gap-4">
+                <div className="hidden md:flex items-center gap-4">
                   {/* Dropdown de Reportes */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -131,14 +131,14 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
 
           <div className="mt-3 sm:hidden">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" color="white" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary-foreground/80 w-4 h-4" />
               <Button variant={"default"} className="px-10 cursor-pointer">Buscar   Producto (F10)</Button>
             </div>
           </div>
         </header>
 
         {/* Content Area */}
-        <main className="flex-1 bg-card overflow-auto">
+        <main className="main-content">
           <Outlet context={{ setFocusScanner }}></Outlet>
         </main>
 

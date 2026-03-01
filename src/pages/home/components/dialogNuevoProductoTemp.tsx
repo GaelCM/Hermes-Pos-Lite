@@ -1,5 +1,3 @@
-"use client"
-
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -13,6 +11,9 @@ import { useListaProductos } from "@/contexts/listaProductos"
 import { useEffect } from "react"
 import type { ProductoVenta } from "@/types/Producto"
 import { useCurrentUser } from "@/contexts/currentUser"
+import { Plus, DollarSign, Layers, ShoppingCart, Tag } from "lucide-react"
+import "./temp-product-dialog.css"
+
 /**
  * Esquema de validación para el producto temporal
  * Se requieren campos básicos como nombre y precio.
@@ -23,6 +24,7 @@ const tempProductSchema = z.object({
     precio_venta: z.coerce.number().min(0.01, "El precio debe ser mayor a 0"),
     precio_mayoreo: z.coerce.number().min(0, "El precio no puede ser negativo").optional(),
     nombre_presentacion: z.string().default("Pieza"),
+    cantidad: z.coerce.number().min(1, "Mínimo 1"),
 })
 
 type TempProductFormValues = z.infer<typeof tempProductSchema>
@@ -45,6 +47,7 @@ export default function DialogNuevoProductoTemp({ isOpen, setIsOpen, inputRef }:
             precio_venta: 0,
             precio_mayoreo: 0,
             nombre_presentacion: "Pieza",
+            cantidad: 1,
         },
     })
 
@@ -57,6 +60,7 @@ export default function DialogNuevoProductoTemp({ isOpen, setIsOpen, inputRef }:
                 precio_venta: 0,
                 precio_mayoreo: 0,
                 nombre_presentacion: "Unidad",
+                cantidad: 1,
             })
         }
     }, [isOpen, form])
@@ -84,7 +88,7 @@ export default function DialogNuevoProductoTemp({ isOpen, setIsOpen, inputRef }:
             es_granel: false,
         }
 
-        addProduct(newProduct)
+        addProduct(newProduct, data.cantidad)
 
         setIsOpen(false)
 
@@ -95,113 +99,166 @@ export default function DialogNuevoProductoTemp({ isOpen, setIsOpen, inputRef }:
     }
 
     return (
-        <Dialog open={isOpen} onOpenChange={() => {
-            setIsOpen(false)
-            setTimeout(() => {
-                inputRef?.current?.focus();
-            }, 100);
+        <Dialog open={isOpen} onOpenChange={(open) => {
+            setIsOpen(open)
+            if (!open) {
+                setTimeout(() => {
+                    inputRef?.current?.focus();
+                }, 100);
+            }
         }}>
-            <DialogContent className="sm:max-w-[500px] border-l-4 border-l-blue-500">
-                <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-                        🛍️ Crear Producto Temporal
-                    </DialogTitle>
-                    <DialogDescription>
-                        Agrega un producto rápido para venta inmediata. No se guardará permanentemente en el inventario.
-                    </DialogDescription>
+            <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden border-none shadow-2xl temp-product-container">
+                <DialogHeader className="p-6 temp-product-header">
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center header-icon-temp text-blue-600">
+                            <Plus className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <DialogTitle className="text-xl font-black text-slate-800">
+                                Producto Express
+                            </DialogTitle>
+                            <DialogDescription className="text-slate-700 text-xs font-bold">
+                                Cobro rápido fuera de inventario
+                            </DialogDescription>
+                        </div>
+                    </div>
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 space-y-4">
 
-                        <FormField
-                            control={form.control}
-                            name="nombre_producto"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="font-semibold text-gray-700">Nombre del Producto</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Ej. Servicio Extra..." {...field} className="focus-visible:ring-blue-500" autoFocus />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <div className="grid grid-cols-2 gap-4">
+                        {/* Nombre del Producto */}
+                        <div className="field-group-aero">
                             <FormField
                                 control={form.control}
-                                name="precio_venta"
+                                name="nombre_producto"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="font-semibold text-gray-700">Precio Venta</FormLabel>
+                                        <FormLabel className="label-aero-temp flex items-center gap-2">
+                                            <Tag className="w-3 h-3" />
+                                            Nombre del Producto
+                                        </FormLabel>
                                         <FormControl>
-                                            <div className="relative">
-                                                <span className="absolute left-3 top-2.5 text-gray-400">$</span>
-                                                <Input type="number" step="0.50" placeholder="0.00" {...field} className="pl-7 focus-visible:ring-blue-500" />
-                                            </div>
+                                            <Input placeholder="Ej. Servicio de Mantenimiento..." {...field} className="input-aero-temp" autoFocus />
                                         </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="precio_mayoreo"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="font-semibold text-gray-700">Precio Mayoreo (Opcional)</FormLabel>
-                                        <FormControl>
-                                            <div className="relative">
-                                                <span className="absolute left-3 top-2.5 text-gray-400">$</span>
-                                                <Input type="number" step="0.50" placeholder="0.00" {...field} className="pl-7 focus-visible:ring-blue-500" />
-                                            </div>
-                                        </FormControl>
-                                        <FormMessage />
+                                        <FormMessage className="text-[10px] font-black uppercase text-red-500" />
                                     </FormItem>
                                 )}
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        {/* Precios */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="field-group-aero">
+                                <FormField
+                                    control={form.control}
+                                    name="precio_venta"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="label-aero-temp flex items-center gap-2 text-blue-600">
+                                                <DollarSign className="w-3 h-3" />
+                                                Precio Venta
+                                            </FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <span className="currency-box">$</span>
+                                                    <Input type="number" step="0.01" placeholder="0.00" {...field} className="input-aero-temp input-with-currency" />
+                                                </div>
+                                            </FormControl>
+                                            <FormMessage className="text-[10px] font-black uppercase text-red-500" />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            <div className="field-group-aero">
+                                <FormField
+                                    control={form.control}
+                                    name="precio_mayoreo"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="label-aero-temp flex items-center gap-2 opacity-60">
+                                                <DollarSign className="w-3 h-3" />
+                                                Mayoreo
+                                            </FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <span className="currency-box">$</span>
+                                                    <Input type="number" step="0.01" placeholder="0.00" {...field} className="input-aero-temp input-with-currency" />
+                                                </div>
+                                            </FormControl>
+                                            <FormMessage className="text-[10px] font-black uppercase text-red-500" />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Cantidad y Unidad */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="field-group-aero">
+                                <FormField
+                                    control={form.control}
+                                    name="nombre_presentacion"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="label-aero-temp flex items-center gap-2">
+                                                <Layers className="w-3 h-3" />
+                                                Unidad
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Ej. Pza" {...field} className="input-aero-temp" />
+                                            </FormControl>
+                                            <FormMessage className="text-[10px] font-black uppercase text-red-500" />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            <div className="field-group-aero">
+                                <FormField
+                                    control={form.control}
+                                    name="cantidad"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="label-aero-temp flex items-center gap-2">
+                                                <ShoppingCart className="w-3 h-3" />
+                                                Cantidad
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input type="number" {...field} className="input-aero-temp text-center font-black" />
+                                            </FormControl>
+                                            <FormMessage className="text-[10px] font-black uppercase text-red-500" />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="field-group-aero">
                             <FormField
                                 control={form.control}
-                                name="nombre_presentacion"
+                                name="descripcion"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="font-semibold text-gray-700">Unidad / Presentación</FormLabel>
+                                        <FormLabel className="label-aero-temp">Descripción (Opcional)</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Ej. Pza, Kg, Servicio" {...field} className="focus-visible:ring-blue-500" />
+                                            <Textarea
+                                                placeholder="Nota rápida..."
+                                                className="resize-none input-aero-temp h-16"
+                                                {...field}
+                                            />
                                         </FormControl>
-                                        <FormMessage />
+                                        <FormMessage className="text-[10px] font-black uppercase text-red-500" />
                                     </FormItem>
                                 )}
                             />
                         </div>
 
-                        <FormField
-                            control={form.control}
-                            name="descripcion"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="font-semibold text-gray-700">Descripción (Opcional)</FormLabel>
-                                    <FormControl>
-                                        <Textarea
-                                            placeholder="Detalles adicionales..."
-                                            className="resize-none focus-visible:ring-blue-500"
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <DialogFooter className="gap-2 sm:gap-0">
-
-                            <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white font-bold transition-all duration-200">
-                                Agregar a Venta
+                        <DialogFooter className="pt-2">
+                            <Button type="submit" className="btn-add-temp group">
+                                <Plus className="w-5 h-5 mr-3 group-hover:scale-125 transition-transform" />
+                                Agregar a la Venta
                             </Button>
                         </DialogFooter>
                     </form>

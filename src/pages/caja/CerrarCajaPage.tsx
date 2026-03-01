@@ -7,7 +7,8 @@ import type { CerrarCorteResponse } from "@/types/Cortes"
 import FormCerrarCaja from "./components/FormCerrarCaja"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle, CheckCircle2, DollarSign, ArrowUp, ShoppingCart, ShoppingBag } from "lucide-react"
+import { AlertCircle, CheckCircle2, DollarSign, ArrowUp, ShoppingCart, ShoppingBag, Wallet } from "lucide-react"
+import type { DashboardTurno, DashboardTurnoResponse } from "@/types/Dashboard";
 
 export default function CerrarCajaPage() {
     const { user } = useCurrentUser();
@@ -16,35 +17,58 @@ export default function CerrarCajaPage() {
     const [error, setError] = useState<string | null>(null);
     const [resumenData, setResumenData] = useState<CerrarCorteResponse | null>(null);
     const [idTurno, setIdTurno] = useState<number | null>(null);
+    const [dashboard, setDashboard] = useState<DashboardTurno | null>(null);
+    const [loadingDashboard, setLoadingDashboard] = useState(false);
 
     useEffect(() => {
         // Obtener ID del turno de localStorage
         const corteStorage = localStorage.getItem("openCaja");
         if (corteStorage) {
             try {
-
                 const parsed = JSON.parse(corteStorage);
+                let currentId: number | null = null;
                 if (typeof parsed === 'number') {
-                    setIdTurno(parsed);
-                } else if (parsed && typeof parsed === 'object' && parsed.id) {
-                    setIdTurno(parsed.id);
-                } else if (parsed && typeof parsed === 'object' && parsed.id_turno) {
-                    setIdTurno(parsed.id_turno);
-                } else {
-                    console.warn("Formato de corteCaja desconocido, intentando usar como número si es string simple", corteStorage);
-                    // Fallback if simple string number
-                    if (!isNaN(Number(corteStorage))) {
-                        setIdTurno(Number(corteStorage));
-                    }
+                    currentId = parsed;
+                } else if (parsed && typeof parsed === 'object' && (parsed.id || parsed.id_turno)) {
+                    currentId = parsed.id || parsed.id_turno;
+                } else if (!isNaN(Number(corteStorage))) {
+                    currentId = Number(corteStorage);
+                }
+
+                if (currentId) {
+                    setIdTurno(currentId);
+                    fetchDashboardData(currentId);
                 }
             } catch (e) {
-                // If not json, maybe just number
                 if (!isNaN(Number(corteStorage))) {
-                    setIdTurno(Number(corteStorage));
+                    const currentId = Number(corteStorage);
+                    setIdTurno(currentId);
+                    fetchDashboardData(currentId);
                 }
             }
         }
     }, []);
+
+    const fetchDashboardData = async (id: number) => {
+        setLoadingDashboard(true);
+        try {
+            const response = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/dashboard/${id}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('tkn')}`
+                }
+            });
+            const result: DashboardTurnoResponse = await response.json();
+            if (result.success) {
+                setDashboard(result.data);
+            }
+        } catch (error) {
+            console.error("Error fetching dashboard for close page:", error);
+        } finally {
+            setLoadingDashboard(false);
+        }
+    };
 
     const handleCerrarCaja = async (efectivoContado: number, observaciones: string) => {
         if (!user || !user.id_usuario) {
@@ -111,7 +135,8 @@ export default function CerrarCajaPage() {
                             <div className="flex justify-between"><span>Total Ventas:</span> <span className="font-bold">{formatCurrency(resumen.ventas.total)}</span></div>
                             <div className="flex justify-between text-sm"><span>En Efectivo:</span> <span>{formatCurrency(resumen.ventas.efectivo)}</span></div>
                             <div className="flex justify-between text-sm"><span>En Tarjeta:</span> <span>{formatCurrency(resumen.ventas.tarjeta)}</span></div>
-                            <div className="flex justify-between text-sm"><span>No. Transacciones:</span> <span>{resumen.ventas.numero}</span></div>
+                            <div className="flex justify-between text-sm text-orange-600 font-medium"><span>A Crédito:</span> <span>{formatCurrency(resumen.ventas.credito)}</span></div>
+                            <div className="flex justify-between text-sm pt-1 border-t"><span>No. Transacciones:</span> <span>{resumen.ventas.numero}</span></div>
                         </CardContent>
                     </Card>
 
@@ -151,7 +176,9 @@ export default function CerrarCajaPage() {
                         </CardHeader>
                         <CardContent className="space-y-2">
                             <div className="flex justify-between text-sm"><span>Efectivo Inicial:</span> <span>{formatCurrency(resumen.efectivo.inicial)}</span></div>
-                            <div className="flex justify-between font-semibold pt-2 border-t">
+                            <div className="flex justify-between text-sm"><span>Ventas Efectivo:</span> <span>+{formatCurrency(resumen.ventas.efectivo)}</span></div>
+                            <div className="flex justify-between text-sm"><span>Abonos (Cobranza):</span> <span className="text-green-600 font-medium">+{formatCurrency(resumen.creditos?.abonos_recibidos || 0)}</span></div>
+                            <div className="flex justify-between font-semibold pt-2 border-t text-blue-700">
                                 <span>Efectivo Esperado (Sistema):</span>
                                 <span>{formatCurrency(resumen.efectivo.esperado)}</span>
                             </div>
@@ -173,7 +200,37 @@ export default function CerrarCajaPage() {
                     </Card>
                 </div>
 
-                <div className="flex justify-center mt-6">
+                <div className="flex justify-center gap-3 mt-6">
+                    <button
+                        onClick={async () => {
+                            try {
+                                const printerName = localStorage.getItem("printer_device");
+                                if (printerName) {
+                                    const ticketData = {
+                                        printerName,
+                                        sucursal: "Sucursal " + (user?.sucursal || ""),
+                                        usuario: user?.usuario || "",
+                                        fecha: new Date(),
+                                        id_turno: idTurno,
+                                        ventas: resumen.ventas,
+                                        egresos: resumen.egresos,
+                                        movimientos: resumen.movimientos,
+                                        efectivo: resumen.efectivo,
+                                        abonos_recibidos: resumen.creditos?.abonos_recibidos || 0,
+                                        cortar: localStorage.getItem("printer_cut") !== "false"
+                                    };
+                                    // @ts-ignore
+                                    await window["electron-api"]?.printTicketCorteEscPos(ticketData);
+                                }
+                            } catch (e) {
+                                console.error("Error al imprimir corte:", e);
+                            }
+                        }}
+                        className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition-colors flex items-center gap-2"
+                    >
+                        <ShoppingCart className="h-4 w-4" />
+                        Imprimir Ticket de Corte
+                    </button>
                     <button
                         onClick={() => navigate('/')}
                         className="px-6 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-colors"
@@ -186,32 +243,175 @@ export default function CerrarCajaPage() {
     }
 
     return (
-        <div className="container mx-auto p-4 max-w-md my-10">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-2xl text-center">Cierre de Caja</CardTitle>
-                    <CardDescription className="text-center">Confirmar montos finales para cerrar el turno</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {error && (
-                        <Alert variant="destructive" className="mb-4">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Error</AlertTitle>
-                            <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                    )}
+        <div className="container mx-auto p-4 max-w-5xl my-10 space-y-6">
+            <div className="text-center space-y-2">
+                <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight">Cierre de Caja</h1>
+                <p className="text-slate-500">Confirma los montos finales para finalizar tu turno de trabajo.</p>
+            </div>
 
-                    {!idTurno ? (
-                        <Alert className="mb-4">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Sin Turno Activo</AlertTitle>
-                            <AlertDescription>No se detectó un control de caja activo en este dispositivo.</AlertDescription>
-                        </Alert>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Panel de Resumen (Izquierda/Arriba) */}
+                <div className="lg:col-span-2 space-y-6">
+                    {loadingDashboard ? (
+                        <Card className="h-full flex items-center justify-center p-20">
+                            <div className="flex flex-col items-center gap-4">
+                                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+                                <p className="text-slate-500 font-medium">Obteniendo resumen actual...</p>
+                            </div>
+                        </Card>
+                    ) : dashboard ? (
+                        <div className="grid grid-cols-1 gap-6">
+                            {/* KPIs Rápidos */}
+                            <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+                                <Card className=" border-blue-100">
+                                    <CardContent className="p-4 flex flex-col items-center text-center">
+                                        <ShoppingCart className="w-5 h-5 text-blue-600 mb-2" />
+                                        <span className="text-[10px] font-black uppercase text-blue-400">Ventas Totales</span>
+                                        <span className="text-lg font-black text-blue-700">{formatCurrency(dashboard.metricas_principales.total_ventas)}</span>
+                                    </CardContent>
+                                </Card>
+                                <Card className=" border-green-100">
+                                    <CardContent className="p-4 flex flex-col items-center text-center">
+                                        <DollarSign className="w-5 h-5 text-green-600 mb-2" />
+                                        <span className="text-[10px] font-black uppercase text-green-400">Ventas Efectivo</span>
+                                        <span className="text-lg font-black text-green-700">{formatCurrency(dashboard.metricas_principales.ventas_efectivo)}</span>
+                                    </CardContent>
+                                </Card>
+                                <Card className=" border-purple-100">
+                                    <CardContent className="p-4 flex flex-col items-center text-center">
+                                        <Wallet className="w-5 h-5 text-purple-600 mb-2" />
+                                        <span className="text-[10px] font-black uppercase text-purple-400">Abonos</span>
+                                        <span className="text-lg font-black text-purple-700">{formatCurrency(dashboard.metricas_principales.abonos_credito)}</span>
+                                    </CardContent>
+                                </Card>
+                                <Card className=" border-orange-100">
+                                    <CardContent className="p-4 flex flex-col items-center text-center">
+                                        <DollarSign className="w-5 h-5 text-orange-600 mb-2" />
+                                        <span className="text-[10px] font-black uppercase text-orange-400">Créditos</span>
+                                        <span className="text-lg font-black text-orange-700">{formatCurrency(dashboard.metricas_principales.ventas_credito)}</span>
+                                    </CardContent>
+                                </Card>
+                                <Card className=" border-red-100">
+                                    <CardContent className="p-4 flex flex-col items-center text-center">
+                                        <ShoppingBag className="w-5 h-5 text-red-600 mb-2" />
+                                        <span className="text-[10px] font-black uppercase text-red-400">Egresos</span>
+                                        <span className="text-lg font-black text-red-700">-{formatCurrency(dashboard.egresos.total_egresos_efectivo)}</span>
+                                    </CardContent>
+                                </Card>
+                                <Card className=" border-blue-600 bg-blue-50">
+                                    <CardContent className="p-4 flex flex-col items-center text-center">
+                                        <CheckCircle2 className="w-5 h-5 text-blue-600 mb-2" />
+                                        <span className="text-[10px] font-black uppercase text-blue-400">Esperado</span>
+                                        <span className="text-lg font-black text-blue-700">{formatCurrency(dashboard.control_efectivo.efectivo_esperado)}</span>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* Detalles Desglosados */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Card>
+                                    <CardHeader className="py-3 bg-slate-50/50">
+                                        <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-500">Desglose de Efectivo</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-4 space-y-2">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-slate-500">Efectivo Inicial</span>
+                                            <span className="font-bold">{formatCurrency(dashboard.control_efectivo.efectivo_inicial)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-slate-500">Ventas en Efectivo</span>
+                                            <span className="font-bold text-green-600">+{formatCurrency(dashboard.metricas_principales.ventas_efectivo)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-slate-500">Abonos (Cobranza)</span>
+                                            <span className="font-bold text-green-600">+{formatCurrency(dashboard.metricas_principales.abonos_credito)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-slate-500">Depósitos</span>
+                                            <span className="font-bold text-green-600">+{formatCurrency(dashboard.movimientos_caja.depositos)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-slate-500">Retiros</span>
+                                            <span className="font-bold text-red-600">-{formatCurrency(dashboard.movimientos_caja.retiros)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-slate-500">Egresos (Efectivo)</span>
+                                            <span className="font-bold text-red-600">-{formatCurrency(dashboard.egresos.total_egresos_efectivo)}</span>
+                                        </div>
+                                        <div className="pt-3 border-t flex justify-between items-center">
+                                            <span className="text-sm font-black uppercase text-slate-700">Total Esperado</span>
+                                            <span className="text-xl font-black text-blue-600">{formatCurrency(dashboard.control_efectivo.efectivo_esperado)}</span>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                <Card>
+                                    <CardHeader className="py-3 bg-slate-50/50">
+                                        <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-500">Otras Métricas</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-4 space-y-2">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-slate-500">Ventas con Tarjeta</span>
+                                            <span className="font-bold text-slate-700">{formatCurrency(dashboard.metricas_principales.ventas_tarjeta)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-slate-500">Total transacciones</span>
+                                            <span className="font-bold text-slate-700">{dashboard.metricas_principales.numero_ventas}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-slate-500">Total Compras</span>
+                                            <span className="font-bold text-slate-700">{formatCurrency(dashboard.egresos.total_compras)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-slate-500">Total Gastos</span>
+                                            <span className="font-bold text-slate-700">{formatCurrency(dashboard.egresos.total_gastos)}</span>
+                                        </div>
+                                        <div className="pt-3 border-t flex flex-col gap-1">
+                                            <span className="text-[10px] font-black uppercase text-slate-400">Estado del Turno</span>
+                                            <p className="text-xs font-bold text-blue-600 uppercase tracking-tight">{dashboard.info_turno.estado}</p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </div>
                     ) : (
-                        <FormCerrarCaja onSubmit={handleCerrarCaja} isLoading={loading} />
+                        <Alert>
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>Información no disponible</AlertTitle>
+                            <AlertDescription>No se pudo cargar el resumen del turno actual.</AlertDescription>
+                        </Alert>
                     )}
-                </CardContent>
-            </Card>
+                </div>
+
+                {/* Formulario de Cierre (Derecha) */}
+                <div className="lg:col-span-1">
+                    <Card className="sticky top-6 border-2 border-blue-100 shadow-xl overflow-hidden">
+                        <CardHeader className="bg-blue-600 text-white">
+                            <CardTitle className="text-xl">Finalizar Turno</CardTitle>
+                            <CardDescription className="text-blue-100">Ingresa el efectivo real contado.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-6">
+                            {error && (
+                                <Alert variant="destructive" className="mb-4">
+                                    <AlertCircle className="h-4 w-4" />
+                                    <AlertTitle>Error</AlertTitle>
+                                    <AlertDescription>{error}</AlertDescription>
+                                </Alert>
+                            )}
+
+                            {!idTurno ? (
+                                <Alert className="mb-4">
+                                    <AlertCircle className="h-4 w-4" />
+                                    <AlertTitle>Sin Turno Activo</AlertTitle>
+                                    <AlertDescription>No se detectó un control de caja activo.</AlertDescription>
+                                </Alert>
+                            ) : (
+                                <FormCerrarCaja onSubmit={handleCerrarCaja} isLoading={loading} />
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
         </div>
-    )
+    );
 }

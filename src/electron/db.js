@@ -1,8 +1,8 @@
-const { app } = require("electron");
-const Database = require("better-sqlite3");
-const path = require("path");
+import { app } from "electron";
+import Database from "better-sqlite3";
+import path from "path";
 
-const dbPath = path.join(app.getPath("userData"), "sistema-hermesPosLite.db");
+const dbPath = path.join(app.getPath("userData"), "sistema-hermesPos.db");
 
 const db = new Database(dbPath);
 
@@ -37,4 +37,4 @@ db.exec(`
 
 console.log("Base de datos lista en: ", dbPath);
 
-module.exports = db;
+export default db;

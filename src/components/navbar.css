@@ -1,0 +1,203 @@
+/* Windows 7 Aero Style for Navbar */
+
+.aero-navbar {
+    background: linear-gradient(to bottom,
+            rgba(255, 255, 255, 0.9) 0%,
+            rgba(240, 245, 255, 0.8) 50%,
+            rgba(225, 235, 250, 0.9) 100%);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    padding: 0.5rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 40;
+    min-height: 60px;
+}
+
+.app-main-layout {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    height: 100vh;
+}
+
+.navbar-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.hamburger-menu-btn {
+    display: none;
+    background: transparent;
+    border: none;
+    padding: 0.25rem;
+    cursor: pointer;
+    color: #4b5563;
+}
+
+@media (max-width: 767px) {
+    .hamburger-menu-btn {
+        display: block;
+    }
+}
+
+.navbar-branch-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.navbar-branch-title {
+    color: #1e40af;
+    font-weight: 800;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 1px white;
+}
+
+.navbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Glossy Aero Buttons */
+.aero-nav-button {
+    background: linear-gradient(to bottom, #ffffff 0%, #f3f4f6 50%, #e5e7eb 100%);
+    border: 1px solid #9ca3af;
+    border-radius: 4px;
+    color: #374151;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 1px 2px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.aero-nav-button:hover {
+    background: linear-gradient(to bottom, #f9fafb 0%, #e5e7eb 50%, #d1d5db 100%);
+    border-color: #6b7280;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.aero-nav-button:active {
+    background: #d1d5db;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    transform: translateY(1px);
+}
+
+.aero-nav-button-primary {
+    background: linear-gradient(to bottom, #60a5fa 0%, #3b82f6 50%, #2563eb 100%);
+    border-color: #1e40af;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.aero-nav-button-primary:hover {
+    background: linear-gradient(to bottom, #93c5fd 0%, #60a5fa 50%, #3b82f6 100%);
+    border-color: #1d4ed8;
+}
+
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #059669;
+    background: rgba(16, 185, 129, 0.1);
+    padding: 0.25rem 0.6rem;
+    border-radius: 12px;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    background-color: #10b981;
+    border-radius: 50%;
+    box-shadow: 0 0 4px #10b981;
+}
+
+.status-dot.pulse {
+    animation: status-pulse 1.5s infinite;
+}
+
+@keyframes status-pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.5);
+        opacity: 0.5;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.config-icon-link {
+    color: #64748b;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.config-icon-link:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #1e3a8a;
+    transform: rotate(30deg);
+}
+
+/* Dropdown Custom Aero */
+.aero-dropdown-trigger {
+    background: rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    padding: 0.4rem 0.8rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.aero-dropdown-trigger:hover {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+.content-outlet-area {
+    flex: 1;
+    overflow-y: auto;
+    background-color: #f8fbff;
+    padding: 0;
+}
+
+/* Hide some actions on small mobile if needed, or keep them all */
+@media (max-width: 640px) {
+
+    .nav-btn-inventory,
+    .nav-btn-sales,
+    .status-badge,
+    .nav-reports-dropdown {
+        display: none !important;
+    }
+}

@@ -1,12 +1,12 @@
-import { Calendar, ChevronDown, DollarSign, FileText, Menu, Package, Search, Settings, TrendingUp, Wifi } from "lucide-react";
-import { Button } from "./ui/button";
+import { Calendar, ChevronDown, DollarSign, FileText, Menu, Package, Settings, TrendingUp } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 
-import { Link, Outlet } from "react-router";
+import { Link, Outlet, useNavigate } from "react-router";
 import { useCurrentUser } from "@/contexts/currentUser";
 import { useHotkeys } from "react-hotkeys-hook";
 import { useState } from "react";
 import DialogProducto from "./dialogProductos";
+import "./navbar.css";
 
 type navBarProps = {
   sidebarOpen: boolean,
@@ -14,141 +14,129 @@ type navBarProps = {
 }
 
 export default function NavBar({ setSidebarOpen }: navBarProps) {
-  ;
   const { user } = useCurrentUser();
   const [openP, setOpenP] = useState(false);
   const [focusScanner, setFocusScanner] = useState<() => void>(() => { });
-  //const [turnoData, setTurnoData] = useState(JSON.parse(localStorage.getItem("openCaja") || "{}"));
+  const navigate = useNavigate();
 
-  useHotkeys('F10', () => {
-    setOpenP(true)
-  }, {
-    enableOnFormTags: true
-  }, [setOpenP]); // El array de dependencias es opcional pero recomendado
+  const openDialog = () => { setOpenP(true) }
+  const moverAInventario = () => { navigate("/productos") }
+  const verMisVentas = () => { navigate("/reportes/misVentas") }
 
-
-  const openDialog = () => {
-    setOpenP(true)
-
-  }
+  useHotkeys('F10', () => { setOpenP(true) }, { enableOnFormTags: true }, [setOpenP]);
+  useHotkeys('F4', (event) => {
+    event.preventDefault()
+    moverAInventario()
+  }, { enableOnFormTags: true }, [moverAInventario]);
 
   return (
     <>
-      <div className="main-wrapper">
-        {/* Header */}
-        <header className="navbar-header">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setSidebarOpen(true)}>
-                <Menu className="w-5 h-5" />
-              </Button>
-              <div className="min-w-0 flex">
-                <h1 className="text-primary font-bold">
-                  Sucursal : {user.sucursal}
-                </h1>
-                <h1 className="font-bold text-primary">
-                  {/* {turnoData.id_turno ? "Turno Actual : " + turnoData.id_turno : "Turno Actual : " + "No hay turno abierto"} */}
-                </h1>
-
-
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 md:gap-4">
-              <div className="relative hidden sm:block">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" color="white" />
-                <Button variant={"default"} className="px-10 cursor-pointer" onClick={openDialog}>Buscar Producto (F10)</Button>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <div className="hidden md:flex items-center gap-1 text-xs md:text-sm text-muted-foreground">
-                  <Wifi className="w-3 h-3 md:w-4 md:h-4 text-green-500" />
-                  <span>Online</span>
-                </div>
-
-              </div>
-
-              {user.id_rol === 1 && (
-                <div className="hidden md:flex items-center gap-4">
-                  {/* Dropdown de Reportes */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="gap-2 bg-transparent">
-                        <FileText className="w-4 h-4" />
-                        Reportes
-                        <ChevronDown className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      <DropdownMenuLabel>Reportes de Ventas</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="gap-2">
-                        <Link to={"reportes/ventasPorMes"} className="flex items-center gap-2 w-full h-full">
-                          <Calendar className="w-4 h-4" />
-                          Por Mes
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="gap-2" >
-                        <Package className="w-4 h-4" />
-                        Por Productos
-                      </DropdownMenuItem>
-
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Reportes de Egresos</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="gap-2">
-                        <Link to={"reportes/misEgresos"} className="flex items-center gap-2 w-full h-full">
-                          <DollarSign className="w-4 h-4" />
-                          Mis Egresos
-                        </Link>
-                      </DropdownMenuItem>
-
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Reportes de Inventario</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="gap-2">
-                        <Link to={"reportes/stockBajo"} className="flex items-center gap-2 w-full h-full">
-                          <TrendingUp className="w-4 h-4" />
-                          Stock Bajo
-                        </Link>
-                      </DropdownMenuItem>
-
-
-
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              )}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Link to={"/configuraciones"} className="gap-2 bg-transparent">
-                    <Settings className="w-4 h-4" />
-                  </Link>
-                </DropdownMenuTrigger>
-              </DropdownMenu>
+      <div className="app-main-layout">
+        <header className="aero-navbar">
+          <div className="navbar-left">
+            <button className="hamburger-menu-btn" onClick={() => setSidebarOpen(true)}>
+              <Menu className="w-5 h-5" />
+            </button>
+            <div className="navbar-branch-info">
+              <span className="navbar-branch-title">Sucursal : {user?.sucursal}</span>
             </div>
           </div>
 
-          <div className="mt-3 sm:hidden">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary-foreground/80 w-4 h-4" />
-              <Button variant={"default"} className="px-10 cursor-pointer">Buscar   Producto (F10)</Button>
+          <div className="navbar-actions">
+            {user?.id_rol === 1 && (
+              <button className="aero-nav-button nav-btn-inventory" onClick={moverAInventario}>
+                <Package className="w-4 h-4" />
+                Inventario (F4)
+              </button>
+            )}
+
+            <button className="aero-nav-button nav-btn-sales" onClick={verMisVentas}>
+              <TrendingUp className="w-4 h-4" />
+              Ventas de hoy
+            </button>
+
+            <button className="aero-nav-button aero-nav-button-primary" onClick={openDialog}>
+              Buscar Producto (F10)
+            </button>
+
+            <div className="status-badge">
+              <div className="status-dot pulse" />
+              ONLINE
             </div>
+
+            {user?.id_rol === 1 && (
+              <div className="nav-reports-dropdown">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <div className="aero-dropdown-trigger">
+                      <FileText className="w-4 h-4" />
+                      Reportes
+                      <ChevronDown className="w-3 h-3" />
+                    </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>Ventas</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>
+                      <Link to={"reportes/ventasGeneral"} className="flex items-center gap-2 w-full">
+                        <Calendar className="w-4 h-4 text-blue-500" /> Ventas Generales
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Link to={"reportes/ventasPorMes"} className="flex items-center gap-2 w-full">
+                        <Calendar className="w-4 h-4 text-purple-500" /> Por Mes
+                      </Link>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Egresos</DropdownMenuLabel>
+                    <DropdownMenuItem>
+                      <Link to={"reportes/misEgresos"} className="flex items-center gap-2 w-full">
+                        <DollarSign className="w-4 h-4 text-orange-500" /> Mis Egresos
+                      </Link>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Gestión</DropdownMenuLabel>
+                    <DropdownMenuItem>
+                      <Link to={"reportes/stockBajo"} className="flex items-center gap-2 w-full">
+                        <TrendingUp className="w-4 h-4 text-red-500" /> Stock Bajo
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Link to={"reportes/misCortes"} className="flex items-center gap-2 w-full">
+                        <TrendingUp className="w-4 h-4 text-green-500" /> Cortes
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Link to={"/creditos"} className="flex items-center gap-2 w-full">
+                        <TrendingUp className="w-4 h-4 text-indigo-500" /> Créditos
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
+
+            <Link to={"/configuraciones"} className="config-icon-link">
+              <Settings className="w-5 h-5" />
+            </Link>
           </div>
         </header>
 
-        {/* Content Area */}
-        <main className="main-content">
-          <Outlet context={{ setFocusScanner }}></Outlet>
+        <main className="content-outlet-area">
+          <Outlet context={{ setFocusScanner }} />
         </main>
-
-
       </div>
 
-      <DialogProducto isOpen={openP} setIsOpen={(open) => {
-        setOpenP(open);
-        if (!open) focusScanner(); // 👈 AQUI
-      }} idSucursal={user.id_sucursal}></DialogProducto>
+      <DialogProducto
+        isOpen={openP}
+        setIsOpen={(open) => {
+          setOpenP(open);
+          if (!open) focusScanner();
+        }}
+        idSucursal={user.id_sucursal}
+      />
     </>
   )
 }

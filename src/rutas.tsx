@@ -34,8 +34,11 @@ import NuevaCompraForm from "./pages/egresos/components/nuevaCompraForm"
 import MisEgresos from "./pages/reportes/egresos/misEgresos"
 import DetalleCompra from "./pages/egresos/components/detalleCompra"
 import MovimientosPage from "./pages/movimientos/movimientos"
-
-
+import VentasGeneralPage from "./pages/reportes/ventas/ventasGeneral"
+import ClientesXCreditos from "./pages/clientes/creditos/clientesXcreditos"
+import EstadoCuentaCliente from "./pages/clientes/creditos/estadoCuentaCliente"
+import MisCortesPage from "./pages/reportes/cortes/misCortes";
+import DetalleCortePage from "./pages/reportes/cortes/detalleCorte";
 
 export const rutas = createHashRouter([
     {
@@ -154,6 +157,10 @@ export const rutas = createHashRouter([
                         path: "/reportes/detalleVenta",
                         element: <DetalleVentaPage />
                     },
+                    {
+                        path: "/reportes/ventasGeneral",
+                        element: <VentasGeneralPage />
+                    },
 
                     {
                         path: "/reportes/ventasPorMes",
@@ -162,6 +169,14 @@ export const rutas = createHashRouter([
                     {
                         path: "/reportes/misEgresos",
                         element: <MisEgresos />
+                    },
+                    {
+                        path: "/reportes/misCortes",
+                        element: <MisCortesPage />
+                    },
+                    {
+                        path: "/reportes/cortes/:id",
+                        element: <DetalleCortePage />
                     },
                     {
                         path: "/reportes/stockBajo",
@@ -174,6 +189,14 @@ export const rutas = createHashRouter([
                     {
                         path: "/movimientos",
                         element: <MovimientosPage />
+                    },
+                    {
+                        path: "/creditos",
+                        element: <ClientesXCreditos />
+                    },
+                    {
+                        path: "/creditos/estado-cuenta/:id_cliente",
+                        element: <EstadoCuentaCliente />
                     }
                 ]
             }

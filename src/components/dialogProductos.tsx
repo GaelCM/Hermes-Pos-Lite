@@ -23,18 +23,15 @@ export default function DialogProducto({ isOpen, setIsOpen, idSucursal, inputRef
                     overflow-hidden 
 
                     /* WEB */
-                    md:max-w-4xl 
-                    md:w-full
-                    md:h-[85vh] 
-                    md:rounded-lg
-                    md:border 
+                    md:max-w-[1200px] 
+                    md:w-[90vw] 
+                    md:h-[90vh] 
 
                     /* MÓVIL (FULL SCREEN) */
                     max-w-[100vw] 
                     w-screen 
                     h-screen 
                     rounded-none
-                    border-none
                 "
             >
                 {/* HEADER RESPONSIVE */}
@@ -51,7 +48,7 @@ export default function DialogProducto({ isOpen, setIsOpen, idSucursal, inputRef
                         pb-4
                     "
                 >
-                    <ProductTable idSucursal={idSucursal} searchLocal={true} />
+                    <ProductTable idSucursal={idSucursal} searchLocal={true} setIsOpen={setIsOpen} />
                 </div>
             </DialogContent>
         </Dialog>

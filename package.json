@@ -2,7 +2,8 @@
   "name": "hermes-pos-lite",
   "private": true,
   "version": "1.0.0",
-  "main": "src/electron/main.js",
+  "type": "module",
+  "main": "src/electron/loader.cjs",
   "scripts": {
     "dev:react": "vite",
     "dev:electron": "electron .",

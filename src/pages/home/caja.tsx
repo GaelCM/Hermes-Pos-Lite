@@ -1,23 +1,19 @@
-
-
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import "./caja.css";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 
 import { useListaProductos } from "@/contexts/listaProductos";
-import { CreditCard, DollarSign, Minus, Pill, Plus, Scan, ShoppingCart, Trash2, Users } from "lucide-react";
+import { CreditCard, Minus, Pill, Plus, RefreshCw, Scan, ShoppingCart, Trash2, Users, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { Reloj } from "./components/reloj";
 import DialogConfirmVenta from "./components/dialogConfirmVenta";
-import { useCliente } from "@/contexts/globalClient";
 import AddCliente from "@/components/dialogAddCliente";
 import { getProductoVenta } from "@/api/productosApi/productosApi";
 import DialiogErrorProducto from "./Dialogs/noEncontrado";
 import { useOutletContext } from "react-router";
 import CarritoTabs from "@/components/carritoTabs";
-
 import { useCurrentUser } from "@/contexts/currentUser";
 import { useOnlineStatus } from "@/hooks/isOnline";
 import { getProductos } from "@/api/productosApi/productosApi";
@@ -25,6 +21,8 @@ import { toast } from "sonner";
 import DialogNuevoProductoTemp from "./components/dialogNuevoProductoTemp";
 import DialogSetGranel from "./components/dialogSetGranel";
 import type { ProductoVenta } from "@/types/Producto";
+import { redondearPrecio } from "@/lib/utils";
+import "./caja.css";
 
 
 export default function Home() {
@@ -42,8 +40,7 @@ export default function Home() {
     const [openGranel, setOpenGranel] = useState(false);
     const [productoGranelPendiente, setProductoGranelPendiente] = useState<ProductoVenta | null>(null);
 
-    const { clearCart, removeProduct, decrementQuantity, incrementQuantity, getTotalPrice, addProduct, getCarritoActivo, crearCarrito, carritoActivo, togglePrecioMayoreo } = useListaProductos();
-    const { cliente } = useCliente();
+    const { clearCart, removeProduct, decrementQuantity, incrementQuantity, getTotalPrice, addProduct, getCarritoActivo, crearCarrito, carritoActivo, togglePrecioMayoreo, asignarClienteCarrito, desasignarClienteCarrito } = useListaProductos();
     const { setFocusScanner } = useOutletContext<{ setFocusScanner: (fn: () => void) => void }>();
 
     const carritoActual = getCarritoActivo();
@@ -60,52 +57,65 @@ export default function Home() {
         setOpenCliente(true);
     }, {
         enableOnFormTags: true
-    }, [setOpenCliente]); // El array de dependencias es opcional pero recomendado
+    }, [setOpenCliente]);
 
     useHotkeys('ctrl+p', () => {
         setOpenNuevoProducto(true);
     }, {
         enableOnFormTags: true
-    }, [setOpenNuevoProducto]); // El array de dependencias es opcional pero recomendado
+    }, [setOpenNuevoProducto]);
 
     useHotkeys('alt+0', () => {
-
         setMetodoPago(0);
     }, {
         enableOnFormTags: true
-    }, [setMetodoPago]); // El array de dependencias es opcional pero recomendado
+    }, [setMetodoPago]);
 
     useHotkeys('alt+1', () => {
-
         setMetodoPago(1);
     }, {
         enableOnFormTags: true
-    }, [setMetodoPago]); // El array de dependencias es opcional pero recomendado
+    }, [setMetodoPago]);
+
+    useHotkeys('alt+2', () => {
+        setMetodoPago(2);
+    }, {
+        enableOnFormTags: true
+    }, [setMetodoPago]);
 
     useHotkeys('f12', () => {
-
         setIsOpen(true);
     }, {
         enableOnFormTags: true
-    }, [setIsOpen]); // El array de dependencias es opcional pero recomendado
+    }, [setIsOpen]);
 
 
     // --- Accessibility & Keyboard Navigation Logic ---
     const [selectedIndex, setSelectedIndex] = useState(0);
+    const scrollRef = useRef<HTMLDivElement>(null);
     const prevLengthRef = useRef(0);
 
-    // Auto-select last item when added
+    // Auto-select and scroll when added
     useEffect(() => {
         const currentLength = carritoActual?.productos?.length ?? 0;
         if (currentLength > prevLengthRef.current) {
             setSelectedIndex(currentLength - 1);
+            // Scroll to bottom immediately
+            setTimeout(() => {
+                if (scrollRef.current) {
+                    scrollRef.current.scrollTo({
+                        top: scrollRef.current.scrollHeight,
+                        behavior: 'smooth'
+                    });
+                }
+            }, 50);
         } else if (currentLength < prevLengthRef.current) {
             setSelectedIndex((prev) => Math.min(prev, currentLength - 1));
         }
         prevLengthRef.current = currentLength;
     }, [carritoActual?.productos?.length]);
 
-    // Scroll selected into view
+    // Scroll selected into view (for keyboard navigation)
     useEffect(() => {
         const element = document.getElementById(`product-row-${selectedIndex}`);
         if (element) {
@@ -125,32 +135,22 @@ export default function Home() {
     }, { enableOnFormTags: true }, [carritoActual?.productos?.length]);
 
     // Action Hotkeys
-    useHotkeys('right', (e) => {
+    useHotkeys('+, right', (e) => {
+        if (idProducto) return;
         e.preventDefault();
         if (!carritoActual?.productos?.length) return;
         const prod = carritoActual.productos[selectedIndex];
         if (prod) incrementQuantity(prod.product.id_unidad_venta);
-    }, { enableOnFormTags: true }, [selectedIndex, carritoActual]);
+    }, { enableOnFormTags: true }, [selectedIndex, carritoActual, idProducto]);
 
-    useHotkeys('left', (e) => {
+    useHotkeys('-, left', (e) => {
+        if (idProducto) return;
         e.preventDefault();
         if (!carritoActual?.productos?.length) return;
         const prod = carritoActual.productos[selectedIndex];
         if (prod) decrementQuantity(prod.product.id_unidad_venta);
-    }, { enableOnFormTags: true }, [selectedIndex, carritoActual]);
+    }, { enableOnFormTags: true }, [selectedIndex, carritoActual, idProducto]);
 
-    /*useHotkeys(['Delete', 'Backspace'], (e) => {
-        // Evitar conflicto con Backspace al escribir en el input
-        if (e.key === 'Backspace' && inputRef.current === document.activeElement && inputRef.current?.value !== '') {
-            return;
-        }
-
-        e.preventDefault();
-        if (!carritoActual?.productos?.length) return;
-        const prod = carritoActual.productos[selectedIndex];
-        if (prod) removeProduct(prod.product.id_unidad_venta);
-    }, { enableOnFormTags: true }, [selectedIndex, carritoActual]);
-*/
     useHotkeys('f11', (e) => {
         e.preventDefault();
         if (!carritoActual?.productos?.length) return;
@@ -173,15 +173,13 @@ export default function Home() {
         if (!idProducto) return;
 
         try {
-            // Intentar búsqueda local PRIMERO (es más rápido y funciona offline)
+            // Intentar búsqueda local PRIMERO
             // @ts-ignore
             const localRes = await window["electron-api"]?.buscarProductoLocal(idProducto);
 
             if (localRes?.success && localRes.data.length > 0) {
-                console.log("Producto encontrado localmente:", localRes.data[0]);
                 procesarProductoEncontrado(localRes.data[0]);
                 setidProducto('');
-                // inputRef.current?.focus(); // El foco lo manejamos según si abre modal o no
                 return;
             }
 
@@ -197,7 +195,6 @@ export default function Home() {
                     inputRef.current?.focus();
                 }
             } else {
-                // Si no hay internet and no se encontró localmente
                 setError(true);
                 setidProducto('');
                 inputRef.current?.focus();
@@ -216,7 +213,6 @@ export default function Home() {
                     // @ts-ignore
                     const syncRes = await window["electron-api"]?.sincronizarProductos(res.data);
                     if (syncRes?.success) {
-                        console.log(`Catálogo sincronizado: ${syncRes.count} productos.`);
                         toast.success(`Catálogo sincronizado: ${syncRes.count} productos.`);
                     }
                 }
@@ -227,18 +223,18 @@ export default function Home() {
         }
     };
 
-    // Sincronizar catálogo al entrar si hay internet
     useEffect(() => {
         syncProducts();
     }, [isOnline, user.id_sucursal]);
 
-    // Motor de sincronización de ventas automáticas
     useEffect(() => {
         const updatePendingCount = async () => {
             // @ts-ignore
             const pending = await window["electron-api"]?.obtenerVentasPendientes();
             setPendingCount(pending?.length || 0);
         };
+
+        let interval: any = null;
 
         if (isOnline) {
             const syncPendingSales = async () => {
@@ -262,25 +258,32 @@ export default function Home() {
                     updatePendingCount();
                 }
             };
+
+            // Sincronizar al detectar internet o al montar
             syncPendingSales();
+
+            // Sincronizar periódicamente cada 30 segundos si hay internet
+            interval = setInterval(() => {
+                syncPendingSales();
+            }, 30000);
+
         } else {
             updatePendingCount();
         }
+
+        return () => {
+            if (interval) clearInterval(interval);
+        };
     }, [isOnline]);
 
-    // LE PASAS EL CALLBACK AL LAYOUT
     useEffect(() => {
         setFocusScanner(() => focusInput);
     }, [setFocusScanner]);
 
-    // Función auxiliar para manejar la lógica de granel vs normal
     const procesarProductoEncontrado = (producto: ProductoVenta) => {
-
         if (Boolean(producto.es_granel)) {
             setProductoGranelPendiente(producto);
             setOpenGranel(true);
-            // NO agregamos todavía, y NO ponemos foco al input principal
-            // El foco se irá al input del dialog
         } else {
             addProduct(producto);
             inputRef.current?.focus();
@@ -289,171 +292,333 @@ export default function Home() {
 
     const handleConfirmGranel = (cantidad: number) => {
         if (productoGranelPendiente) {
-            // Para no romper nada:
             addProduct(productoGranelPendiente, cantidad);
         }
     };
 
-
-
-
     return (
-        <div className="pos-container">
-            {/* IZQUIERDA: PRODUCTOS */}
-            <div className="pos-left-panel">
+        <div className="caja-container">
+            {/* Lado izquierdo (Col 1) */}
+            <div className="caja-left-column">
+                {/* Tabs de Carritos */}
                 <CarritoTabs />
 
-                <form onSubmit={buscarProducto} className="pos-card p-3 flex gap-3 items-center">
-                    <div className="relative flex-1">
-                        <Scan className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                        <Input
-                            ref={inputRef}
-                            placeholder="Escanear producto (F10)..."
-                            onChange={(e) => setidProducto(e.target.value)}
-                            value={idProducto || ''}
-                            className="pl-10 h-12 text-lg font-semibold border-2 border-slate-200 focus:border-primary-500"
-                            autoFocus
-                        />
-                    </div>
-                    <Button type="submit" size="lg" className="h-12 px-8 bg-primary hover:bg-primary text-white font-black shadow-md border-0 active:scale-95 transition-all">
-                        <Plus className="mr-2 h-5 w-5" /> AGREGAR
-                    </Button>
-                </form>
-
-                <div className="pos-card product-list-container">
-                    <div className="p-3 border-b bg-slate-50 flex justify-between items-center">
-                        <h3 className="font-bold text-slate-700 flex items-center gap-2">
-                            <ShoppingCart className="w-4 h-4" /> Productos ({carritoActual?.productos?.length ?? 0})
-                        </h3>
-                        <div className="flex items-center gap-3">
-                            {pendingCount > 0 && (
-                                <span className="text-[10px] font-bold text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100 uppercase">
-                                    {pendingCount} Pendientes
-                                </span>
-                            )}
-                            {!isOnline ? (
-                                <span className="text-[10px] font-bold text-red-500 animate-pulse">● OFFLINE</span>
-                            ) : (
-                                <span className="text-[10px] font-bold text-emerald-500">● ONLINE</span>
-                            )}
-                            <Button variant="ghost" size="sm" onClick={clearCart} className="text-red-500 h-7 text-xs">
-                                Vaciar lista
-                            </Button>
+                {/* Scanner Section */}
+                <div className="aero-card scanner-card">
+                    <div className="scanner-header">
+                        <div className="flex items-center gap-2">
+                            <span className="ticket-badge">Ticket Activo</span>
+                            <span className="ticket-info">
+                                {carritoActual?.cliente?.nombre_cliente || carritoActual?.nombre || "Sin Nombre"}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
+                            <ShoppingCart className="w-3 h-3" />
+                            {carritoActual?.productos?.length ?? 0} PRODUCTOS
                         </div>
                     </div>
 
-                    <div className="product-list-scroll">
-                        {carritoActual?.productos?.length === 0 ? (
-                            <div className="py-20 text-center text-slate-400">
-                                <ShoppingCart className="w-16 h-16 mx-auto mb-4 opacity-10" />
-                                <p className="font-medium">Escanea un producto para comenzar</p>
+                    <div className="scanner-form-container">
+                        <div className="scanner-header-title">
+                            <div className="flex items-center gap-1.5 font-black text-xs text-muted-foreground uppercase">
+                                <Scan className="w-3 h-3 text-primary" />
+                                Scanner
                             </div>
-                        ) : (
-                            carritoActual?.productos?.map((producto, index) => (
-                                <div
-                                    key={producto.product.sku_presentacion}
-                                    onClick={() => setSelectedIndex(index)}
-                                    className={`product-item ${index === selectedIndex ? 'selected' : ''}`}
+                            <div className="flex items-center gap-2">
+                                {pendingCount > 0 && (
+                                    <span className="text-[9px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full animate-pulse font-bold">
+                                        {pendingCount} Pendientes
+                                    </span>
+                                )}
+                                {!isOnline ? (
+                                    <span className="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-bold flex items-center gap-1">
+                                        <div className="w-1 h-1 bg-red-600 rounded-full"></div>
+                                        OFFLINE
+                                    </span>
+                                ) : (
+                                    <span className="text-[9px] bg-green-100 text-green-600 px-1.5 py-0.5 rounded-full font-bold flex items-center gap-1">
+                                        <div className="w-1 h-1 bg-green-600 rounded-full animate-pulse"></div>
+                                        ONLINE
+                                    </span>
+                                )}
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-6 text-[10px] gap-1 px-2"
+                                    onClick={() => syncProducts()}
+                                    title="Actualizar productos (API)"
                                 >
-                                    <div className={`w-10 h-10 rounded flex items-center justify-center shrink-0 border ${index === selectedIndex ? 'bg-primary-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                                        <Pill className="w-5 h-5" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex justify-between items-center">
-                                            <span className="product-name truncate">{producto.product.nombre_producto}</span>
-                                            <span className="product-price tabular-nums">
-                                                ${((producto.usarPrecioMayoreo ? producto.product.precio_mayoreo : producto.product.precio_venta) * producto.quantity).toFixed(2)}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between items-center mt-1">
-                                            <div className="product-details flex items-center gap-2">
-                                                <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 border border-slate-200">{producto.product.sku_presentacion}</span>
-                                                <span className="text-slate-600 font-bold">${(producto.usarPrecioMayoreo ? producto.product.precio_mayoreo : producto.product.precio_venta).toFixed(2)} c/u</span>
-                                                {producto.usarPrecioMayoreo && <span className="bg-black text-white px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-sm">MAYOREO</span>}
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <Button variant="outline" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); decrementQuantity(producto.product.id_unidad_venta); }}><Minus className="w-3" /></Button>
-                                                <span className="w-8 text-center font-bold text-sm">{producto.quantity}</span>
-                                                <Button variant="outline" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); incrementQuantity(producto.product.id_unidad_venta); }}><Plus className="w-3" /></Button>
-                                                <Button variant="ghost" size="icon" className="h-7 w-7 ml-2 text-red-400" onClick={(e) => { e.stopPropagation(); removeProduct(producto.product.id_unidad_venta); }}><Trash2 className="w-4" /></Button>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    actualizar
+                                    <RefreshCw className="h-3 w-3" />
+                                </Button>
+                            </div>
+                        </div>
+                        <form className="scanner-input-group" onSubmit={buscarProducto}>
+                            <div className="scanner-input-wrapper">
+                                <Scan className="scanner-icon" />
+                                <Input
+                                    ref={inputRef}
+                                    placeholder="Escanear producto..."
+                                    onChange={(e) => setidProducto(e.target.value)}
+                                    value={idProducto || ''}
+                                    className="aero-input"
+                                    autoFocus
+                                />
+                            </div>
+                            <Button type="submit" size="sm" className="aero-button-primary">
+                                <Plus className="w-4 h-4 mr-1.5" />
+                                Agregar
+                            </Button>
+                        </form>
+                    </div>
+                </div>
+
+                {/* Products List Section */}
+                <div className="aero-card products-list-card">
+                    <div className="products-list-header">
+                        <div className="flex items-center justify-between w-full">
+                            <span className="flex items-center gap-2 text-sm font-bold text-slate-700">
+                                <ShoppingCart className="w-4 h-4 text-primary" />
+                                Productos ({carritoActual?.productos?.length ?? 0})
+                            </span>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 text-xs"
+                                onClick={() => {
+                                    clearCart();
+                                    inputRef.current?.focus();
+                                }}
+                                disabled={(carritoActual?.productos?.length ?? 0) === 0}
+                            >
+                                <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                                Limpiar
+                            </Button>
+                        </div>
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                        <div
+                            ref={scrollRef}
+                            className="scroll-area"
+                        >
+                            {(carritoActual?.productos?.length ?? 0) === 0 ? (
+                                <div className="text-center py-20 text-muted-foreground bg-slate-50/30">
+                                    <ShoppingCart className="w-10 h-10 mx-auto mb-2 opacity-20" />
+                                    <p className="text-sm font-medium">No hay Productos en el carrito</p>
+                                    <p className="text-xs opacity-60">Escanea un código de barras para comenzar</p>
                                 </div>
-                            ))
-                        )}
+                            ) : (
+                                carritoActual?.productos?.map((producto, index) => (
+                                    <div
+                                        key={producto.product.sku_presentacion}
+                                        id={`product-row-${index}`}
+                                        className={`product-item ${producto.usarPrecioMayoreo ? 'mayoreo' : ''} ${index === selectedIndex ? 'selected' : ''}`}
+                                        onClick={() => setSelectedIndex(index)}
+                                    >
+                                        <div className="product-main-row">
+                                            <div className="product-name-section">
+                                                <span className="product-icon-box">
+                                                    <Pill className="w-3.5 h-3.5 text-primary" />
+                                                </span>
+                                                <p className="product-name">{producto.product.nombre_producto} {producto.product.nombre_presentacion}</p>
+                                                <span className={`product-stock-badge ${producto.product.stock_disponible_presentacion == 0 ? 'stock-low' : producto.product.stock_disponible_presentacion <= 5 ? 'stock-mid' : 'stock-ok'}`}>
+                                                    {producto.product.stock_disponible_presentacion} STOCK
+                                                </span>
+                                            </div>
+                                            <div className="product-price-total">
+                                                ${((producto.usarPrecioMayoreo ? producto.product.precio_mayoreo : producto.product.precio_venta) * producto.quantity).toFixed(2)}
+                                            </div>
+                                        </div>
+
+                                        <div className="product-controls-row">
+                                            <div className="flex items-center gap-1.5">
+                                                <p className="text-[10px] font-bold text-muted-foreground mr-1">
+                                                    ${(producto.usarPrecioMayoreo ? producto.product.precio_mayoreo : producto.product.precio_venta).toFixed(2)} p/u
+                                                </p>
+                                                <div className="quantity-controls">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            decrementQuantity(producto.product.id_unidad_venta);
+                                                        }}
+                                                        className="qty-btn"
+                                                    >
+                                                        <Minus className="w-2.5 h-2.5" />
+                                                    </button>
+                                                    <span className="qty-value">{producto.quantity}</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            incrementQuantity(producto.product.id_unidad_venta);
+                                                        }}
+                                                        className="qty-btn"
+                                                    >
+                                                        <Plus className="w-2.5 h-2.5" />
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-3">
+                                                <div className={`mayoreo-toggle-container ${producto.usarPrecioMayoreo ? 'active' : ''}`}>
+                                                    <span className="mayoreo-toggle-label">Mayoreo</span>
+                                                    <Switch
+                                                        className="h-4 w-7 [&>span]:h-3 [&>span]:w-3 switch-mayoreo"
+                                                        checked={producto.usarPrecioMayoreo || false}
+                                                        onCheckedChange={() => togglePrecioMayoreo(producto.product.id_unidad_venta)}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
+                                                </div>
+
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        removeProduct(producto.product.id_unidad_venta)
+                                                        inputRef.current?.focus();
+                                                    }}
+                                                    className="w-7 h-7 p-0 text-slate-300 hover:text-red-500 hover:bg-red-50"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* DERECHA: COBRO */}
-            <div className="pos-right-panel">
-                <div className="pos-card p-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600 text-xs">
-                            {user?.usuario?.substring(0, 2).toUpperCase()}
-                        </div>
-                        <span className="font-bold text-slate-700 text-sm">{user?.usuario}</span>
-                    </div>
-                    <Reloj />
-                </div>
-
-                <div className="total-display">
-                    <p className="text-blue-300 text-[10px] font-bold uppercase tracking-widest mb-1">Total a Pagar</p>
-                    <div className="total-amount">
-                        <span className="text-2xl opacity-50 mr-1">$</span>
-                        {getTotalPrice().toFixed(2)}
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                    <Button
-                        variant="default"
-                        className={`h-20 flex flex-col gap-1 border-2 font-black text-xs transition-all ${metodoPago === 0 ? "border-blue-600 bg-primary text-white ring-2 ring-blue-600/20" : "border-slate-200 text-slate-500  bg-white grayscale opacity-70 hover:opacity-100"}`}
-                        onClick={() => setMetodoPago(0)}
-                    >
-                        <DollarSign className="w-6 h-6" /> EFECTIVO (alt+0)
-                    </Button>
-                    <Button
-                        variant="default"
-                        className={`h-20 flex flex-col gap-1 border-2 font-black text-xs transition-all ${metodoPago === 1 ? "border-blue-600 bg-primary text-white ring-2 ring-blue-600/20" : "bg-black grayscale opacity-70 hover:opacity-100 text-white"}`}
-                        onClick={() => setMetodoPago(1)}
-                    >
-                        <CreditCard className="w-6 h-6" /> TARJETA (alt+1)
-                    </Button>
-                </div>
-
-                <Button
-                    onClick={() => setIsOpen(true)}
-                    disabled={(carritoActual?.productos?.length ?? 0) === 0}
-                    className="h-20 w-full text-2xl font-black bg-primary hover:bg-primary/80 transition-all shadow-xl active:scale-[0.98] disabled:bg-slate-200 disabled:text-slate-400"
-                >
-                    COBRAR (F12)
-                </Button>
-
-                <div className="flex-1 space-y-2">
-                    <Button variant="outline" className="w-full justify-start h-10 font-bold text-slate-600 bg-white" onClick={() => setOpenNuevoProducto(true)}>
-                        <Plus className="w-4 h-4 mr-2" /> Producto Temporal
-                    </Button>
-
-                    <div className="pos-card p-3 bg-white mt-2">
-                        <div className="flex justify-between items-center mb-1">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase">Cliente</span>
-                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-blue-600" onClick={() => setOpenCliente(true)}>
+            {/* Lado derecho (Col 2) */}
+            <div className="caja-right-column">
+                {/* Datos de la venta */}
+                <div className="xl:sticky xl:top-6 space-y-3">
+                    <div className="aero-card">
+                        <div className="px-4 py-3 border-b border-primary/10">
+                            <div className="flex items-center gap-2 text-primary font-bold">
                                 <Users className="w-4 h-4" />
+                                Información del Cliente
+                            </div>
+                        </div>
+                        <div className="p-4 space-y-3">
+                            <div className="customer-card-content">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <p className="customer-label">Nombre</p>
+                                        <p className="customer-name">{carritoActual?.cliente?.nombre_cliente || "Cliente General"}</p>
+                                        <p className="text-xs text-muted-foreground mt-1">ID: {carritoActual?.cliente?.id_cliente || "N/A"}</p>
+                                    </div>
+                                    {carritoActual?.cliente && (
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-6 w-6 p-0 text-destructive"
+                                            onClick={() => carritoActual && desasignarClienteCarrito(carritoActual.id)}
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                            <Button variant="outline" size="sm" className="w-full" onClick={() => setOpenCliente(true)}>
+                                <Users className="w-4 h-4 mr-2" />
+                                {carritoActual?.cliente ? "Cambiar Cliente" : "Asignar Cliente"} (alt+m)
+                            </Button>
+                            <Button variant="outline" size="sm" className="w-full" onClick={() => setOpenNuevoProducto(true)}>
+                                Nuevo producto temporal (ctrl+p)
                             </Button>
                         </div>
-                        <p className="font-bold text-sm text-slate-800 truncate">
-                            {cliente.nombreCliente || "Cliente General"}
-                        </p>
                     </div>
+
+                    <div className="aero-card total-card">
+                        <div className="total-display">
+                            <p className="total-label">Total a Pagar</p>
+                            <div className="total-amount">
+                                ${redondearPrecio(getTotalPrice()).toFixed(2)}
+                            </div>
+                            <Separator className="my-4" />
+                            <div className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                    <span>Subtotal:</span>
+                                    <span>${getTotalPrice().toFixed(2)}</span>
+                                </div>
+                                <Separator />
+                                <div className="flex justify-between font-bold">
+                                    <span>Total:</span>
+                                    <span>${redondearPrecio(getTotalPrice()).toFixed(2)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        <div className="payment-methods-grid">
+                            <button
+                                type="button"
+                                className={`pay-btn ${metodoPago === 0 ? "active" : "inactive"}`}
+                                disabled={(carritoActual?.productos?.length ?? 0) === 0}
+                                onClick={() => setMetodoPago(0)}
+                            >
+                                Efectivo(alt+0)
+                            </button>
+                            <button
+                                type="button"
+                                className={`pay-btn ${metodoPago === 1 ? "active" : "inactive"}`}
+                                disabled={(carritoActual?.productos?.length ?? 0) === 0}
+                                onClick={() => setMetodoPago(1)}
+                            >
+                                Tarjeta (alt+1)
+                            </button>
+                            <button
+                                type="button"
+                                className={`pay-btn ${metodoPago === 2 ? "active" : "inactive"}`}
+                                disabled={(carritoActual?.productos?.length ?? 0) === 0}
+                                onClick={() => setMetodoPago(2)}
+                            >
+                                Crédito(alt+2)
+                            </button>
+                        </div>
+
+                        <button
+                            type="button"
+                            className="process-payment-btn"
+                            disabled={(carritoActual?.productos?.length ?? 0) === 0}
+                            onClick={() => setIsOpen(true)}>
+                            <CreditCard className="w-5 h-5 mr-2 inline" />
+                            Procesar Pago (F12)
+                        </button>
+
+                        <Button
+                            variant="destructive"
+                            className="w-full h-12"
+                            onClick={() => clearCart()}
+                            disabled={(carritoActual?.productos?.length ?? 0) === 0}
+                        >
+                            Cancelar Venta (ESC)
+                        </Button>
+                    </div>
+
+                    <Reloj />
                 </div>
             </div>
 
             {/* Dialogs */}
-            <DialogConfirmVenta isOpen={isOpen} onClose={setIsOpen} metodoPago={metodoPago} inputRef={inputRef} />
+            <DialogConfirmVenta isOpen={isOpen} onClose={setIsOpen} metodoPago={metodoPago} inputRef={inputRef} setMetodoPago={setMetodoPago} />
             <DialiogErrorProducto isOpen={error} setIsOpen={setError} inputRef={inputRef} />
-            <AddCliente isOpen={openCliente} setIsOpen={setOpenCliente} inputRef={inputRef} />
+            <AddCliente
+                isOpen={openCliente}
+                setIsOpen={setOpenCliente}
+                inputRef={inputRef}
+                onSelect={(selectedCliente) => {
+                    if (carritoActivo) {
+                        asignarClienteCarrito(carritoActivo, selectedCliente);
+                    }
+                }}
+            />
             <DialogNuevoProductoTemp isOpen={openNuevoProducto} setIsOpen={setOpenNuevoProducto} inputRef={inputRef} />
             <DialogSetGranel
                 isOpen={openGranel}
@@ -463,5 +628,5 @@ export default function Home() {
                 inputRefMain={inputRef}
             />
         </div>
-    );
+    )
 }

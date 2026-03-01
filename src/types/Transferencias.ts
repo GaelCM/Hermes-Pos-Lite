@@ -17,6 +17,7 @@ export interface TransferenciaProducto {
     id_sucursal: number;
     stock_piezas: number;
     stock_disponible_presentacion: number;
+    es_granel: boolean;
 }
 
 export interface TransferenciaItem {

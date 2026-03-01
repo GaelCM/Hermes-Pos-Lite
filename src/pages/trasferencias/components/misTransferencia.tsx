@@ -1,15 +1,17 @@
 
 
-import { enviarTransferenciasApi, obtenerTransferenciasApi, obtenerTransferenciasPendientesApi } from "@/api/transferenciasApi/transferenciasApi";
+import { cancelarTransferenciaApi, enviarTransferenciasApi, obtenerDetalleTransferenciaApi, obtenerTransferenciasApi, obtenerTransferenciasPendientesApi } from "@/api/transferenciasApi/transferenciasApi";
 import { useCurrentUser } from "@/contexts/currentUser";
 import type { TablaTransferenciasProps, TransferenciasPendientesProps } from "@/types/ComponentsT";
 import type { TransferenciaDTO } from "@/types/Transferencias";
 import { format } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
-import { ArrowRightLeft, Ban, CheckCircle, Clock, Eye, Package, PackageCheck, Send, XCircle } from "lucide-react";
+import { ArrowRightLeft, Ban, CheckCircle, Clock, Eye, Package, PackageCheck, Send, XCircle, Printer, Calendar } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import DialogConfirmarAceptarTranseferencia from "./dialogConfirmarAceptarTranseferencia";
+import DialogConfirmarCancelacion from "./dialogConfirmarCancelacion";
+import "../transferencias.css";
 
 
 
@@ -23,16 +25,9 @@ interface BadgeProps {
   variant?: 'default' | 'pending' | 'transit' | 'received' | 'cancelled';
 }
 const Badge = ({ children, variant = 'default' }: BadgeProps) => {
-  const variants = {
-    default: 'bg-gray-100 text-gray-800',
-    pending: 'badge-pending',
-    transit: 'badge-transit',
-    received: 'badge-received',
-    cancelled: 'badge-cancelled'
-  };
-
+  const variantClass = `badge-${variant}`;
   return (
-    <span className={`status-badge ${variants[variant]}`}>
+    <span className={`badge-aero ${variantClass}`}>
       {children}
     </span>
   );
@@ -43,46 +38,12 @@ interface CardProps {
   className?: string;
 }
 const Card = ({ children, className = '' }: CardProps) => (
-  <div className={`transfer-card ${className}`}>
-    <div className="transfer-card-content">
-      {children}
-    </div>
+  <div className={`aero-card ${className}`}>
+    {children}
   </div>
 );
 
-interface ButtonProps {
-  children: React.ReactNode;
-  variant?: 'default' | 'outline' | 'ghost' | 'success' | 'danger';
-  size?: 'sm' | 'md' | 'lg';
-  onClick?: () => void;
-  className?: string;
-  disabled?: boolean;
-}
-const Button = ({ children, variant = 'default', size = 'md', onClick, className = '', disabled = false }: ButtonProps) => {
-  const variants = {
-    default: 'btn-primary',
-    outline: 'bg-white border text-gray-700 hover:bg-gray-50',
-    ghost: 'btn-ghost',
-    success: 'btn-success',
-    danger: 'btn-danger'
-  };
-
-  const sizes = {
-    sm: 'text-xs px-2 py-1',
-    md: 'px-4 py-2',
-    lg: 'px-6 py-3'
-  };
-
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={`action-btn ${variants[variant]} ${sizes[size]} ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-    >
-      {children}
-    </button>
-  );
-};
+// Button component removed as it's no longer used
 
 
 interface TabItem {
@@ -100,17 +61,17 @@ interface TabsProps {
 
 const Tabs = ({ tabs, activeTab, onChange }: TabsProps) => {
   return (
-    <div className="transfer-tabs">
+    <div className="tabs-container">
       {tabs.map((tab) => (
         <button
           key={tab.id}
           onClick={() => onChange(tab.id)}
-          className={`transfer-tab-btn ${activeTab === tab.id ? "active" : ""}`}
+          className={`tab-btn-aero ${activeTab === tab.id ? "active" : ""}`}
         >
           {tab.icon}
-          {tab.label}
+          <span className="uppercase tracking-wider">{tab.label}</span>
           {tab.count && tab.count > 0 && (
-            <span className="tab-count">
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${activeTab === tab.id ? "bg-blue-600 text-white" : "bg-slate-200 text-slate-600"}`}>
               {tab.count}
             </span>
           )}
@@ -160,132 +121,94 @@ const formatFecha = (fecha: string | number | Date) => {
 // COMPONENTE: TABLA DE TRANSFERENCIAS
 // ====================================
 
-const TablaTransferencias = ({ transferencias, onEnviar, onCancelar, onVerDetalle, mostrarAcciones = true, loading }: TablaTransferenciasProps) => {
+const TablaTransferencias = ({ transferencias, onEnviar, onCancelar, onVerDetalle, onImprimir, mostrarAcciones = true, loading }: Omit<TablaTransferenciasProps, 'setLoading'>) => {
   return (
-    <div className="transfer-table-container">
-
+    <div className="overflow-x-auto">
       {loading ? (
-        <div className="text-center p-35">
+        <div className="text-center p-20">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-slate-600">Cargando sucursales...</p>
+          <p className="mt-4 font-bold text-slate-600">Cargando transferencias...</p>
         </div>
-      )
-        : (
-          <table className="transfer-table">
-            <thead>
-              <tr>
-                <th className="px-6 py-3 text-left">
-                  ID
-                </th>
-                <th className="px-6 py-3 text-left">
-                  Estado
-                </th>
-                <th className="px-6 py-3 text-left">
-                  Origen → Destino
-                </th>
-                <th className="px-6 py-3 text-left">
-                  Fecha Envío
-                </th>
-                <th className="px-6 py-3 text-left">
-                  Productos
-                </th>
-                <th className="px-6 py-3 text-left">
-                  Motivo
-                </th>
+      ) : (
+        <table className="aero-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Estado</th>
+              <th>Movimiento</th>
+              <th>Fecha</th>
+              <th>Productos</th>
+              <th>Nota</th>
+              {mostrarAcciones && <th className="text-right">Acciones</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {transferencias.map((transferencia: TransferenciaDTO) => (
+              <tr key={transferencia.id_transferencia}>
+                <td className="font-black text-blue-600">
+                  #{transferencia.id_transferencia}
+                </td>
+                <td>
+                  {getEstadoBadge(transferencia.estado)}
+                </td>
+                <td>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-black text-slate-900">{transferencia.sucursal_origen}</span>
+                    <ArrowRightLeft className="w-3 h-3 text-slate-400" />
+                    <span className="text-sm font-black text-slate-900">{transferencia.sucursal_destino}</span>
+                  </div>
+                  <div className="text-[10px] uppercase font-bold text-slate-500 mt-1">
+                    Operador: {transferencia.usuario_origen}
+                  </div>
+                </td>
+                <td className="text-xs font-bold text-slate-600">
+                  {formatFecha(transferencia.fecha_creacion)}
+                </td>
+                <td>
+                  <div className="flex flex-col">
+                    <span className="font-black text-slate-900">{transferencia.total_productos} Ítems</span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase">{transferencia.total_piezas} piezas totales</span>
+                  </div>
+                </td>
+                <td className="text-xs font-medium text-slate-600 max-w-[150px] truncate">
+                  {transferencia.motivo || '---'}
+                </td>
                 {mostrarAcciones && (
-                  <th className="px-6 py-3 text-right">
-                    Acciones
-                  </th>
+                  <td>
+                    <div className="flex items-center justify-end gap-2">
+                      <button className="btn-action btn-eye" title="Ver Detalle" onClick={() => onVerDetalle(transferencia.id_transferencia)}>
+                        <Eye className="w-4 h-4" />
+                      </button>
+
+                      {transferencia.estado === 'pendiente' && (
+                        <>
+                          <button className="btn-action btn-send" title="Enviar Transferencia" onClick={() => onEnviar(transferencia.id_transferencia)}>
+                            <Send className="w-4 h-4" />
+                          </button>
+                          <button className="btn-action btn-ban" title="Cancelar" onClick={() => onCancelar(transferencia.id_transferencia)}>
+                            <Ban className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
+                      {(transferencia.estado === 'en_transito' || transferencia.estado === 'recibida') && onImprimir && (
+                        <button className="btn-action btn-print" title="Imprimir Ticket" onClick={() => onImprimir(transferencia.id_transferencia)}>
+                          <Printer className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
                 )}
               </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {transferencias.map((transferencia: TransferenciaDTO) => (
-                <tr key={transferencia.id_transferencia} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    #{transferencia.id_transferencia}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {getEstadoBadge(transferencia.estado)}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{transferencia.sucursal_origen}</span>
-                      <ArrowRightLeft className="w-4 h-4 text-gray-400" />
-                      <span className="font-medium">{transferencia.sucursal_destino}</span>
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      Por: {transferencia.usuario_origen}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatFecha(transferencia.fecha_creacion)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <div className="flex flex-col">
-                      <span className="font-medium">{transferencia.total_productos} productos</span>
-                      <span className="text-xs text-gray-500">{transferencia.total_piezas} piezas</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                    {transferencia.motivo}
-                  </td>
-                  {mostrarAcciones && (
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onVerDetalle(transferencia.id_transferencia)}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
+            ))}
+          </tbody>
+        </table>
+      )}
 
-                        {transferencia.estado === 'pendiente' && (
-                          <>
-                            <Button
-                              variant="success"
-                              size="sm"
-                              onClick={() => onEnviar(transferencia.id_transferencia)}
-                            >
-                              <Send className="w-4 h-4" />
-                              Enviar
-                            </Button>
-                            <Button
-                              variant="danger"
-                              size="sm"
-                              onClick={() => onCancelar(transferencia.id_transferencia)}
-                            >
-                              <Ban className="w-4 h-4" />
-                            </Button>
-                          </>
-                        )}
-
-                        {transferencia.estado === 'en_transito' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled
-                          >
-                            <Ban className="w-4 h-4" />
-                            Enviada
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-
-
-
-      {transferencias.length === 0 && (
-        <div className="text-center py-12">
-          <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">No hay transferencias para mostrar</p>
+      {!loading && transferencias.length === 0 && (
+        <div className="text-center py-20 bg-slate-50/50">
+          <Package className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+          <h3 className="text-xl font-black text-slate-400 uppercase tracking-widest">Sin Registros</h3>
+          <p className="text-slate-400 text-sm font-bold">No se encontraron transferencias en este rango.</p>
         </div>
       )}
     </div>
@@ -296,80 +219,87 @@ const TablaTransferencias = ({ transferencias, onEnviar, onCancelar, onVerDetall
 // COMPONENTE: TRANSFERENCIAS PENDIENTES DE RECIBIR
 // ====================================
 
-const TransferenciasPendientesRecibir = ({ transferencias, onRecibir }: TransferenciasPendientesProps) => {
-
-
-
+const TransferenciasPendientesRecibir = ({ transferencias, onRecibir, onCancelar }: TransferenciasPendientesProps) => {
   return (
-    <div className="space-y-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {transferencias.map((transferencia: TransferenciaDTO) => (
-        <Card key={transferencia.id_transferencia} className="pending-card">
-          <div className="pending-info">
-            <div className="pending-header">
-              <div className="bg-blue-100 p-2 rounded-lg">
-                <PackageCheck className="w-5 h-5 text-blue-600" />
+        <Card key={transferencia.id_transferencia} className="p-6 pending-card border-l-4 border-l-blue-500">
+          <div className="flex flex-col h-full">
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
+                  <PackageCheck className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">
+                    Traspaso #{transferencia.id_transferencia}
+                  </h3>
+                  <p className="text-sm font-bold text-slate-500">
+                    Origen: <span className="text-blue-600">{transferencia.sucursal_origen}</span>
+                  </p>
+                </div>
+              </div>
+              {getEstadoBadge(transferencia.estado)}
+            </div>
+
+            <div className="grid grid-cols-2 gap-y-4 mb-6 bg-slate-50/80 p-4 rounded-xl border border-slate-100">
+              <div>
+                <p className="text-[10px] uppercase font-black text-slate-400 mb-1">Enviado por</p>
+                <p className="text-sm font-bold text-slate-800">{transferencia.usuario_origen}</p>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Transferencia #{transferencia.id_transferencia}
-                </h3>
-                <p className="text-sm text-gray-500">
-                  De: <span className="font-medium text-gray-700">{transferencia.sucursal_origen}</span>
-                </p>
+                <p className="text-[10px] uppercase font-black text-slate-400 mb-1">Carga total</p>
+                <p className="text-sm font-black text-slate-800">{transferencia.total_productos} Ítems</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase font-black text-slate-400 mb-1">Fecha Envío</p>
+                <p className="text-xs font-bold text-slate-700">{formatFecha(transferencia.fecha_envio)}</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase font-black text-slate-400 mb-1">Piezas</p>
+                <p className="text-sm font-bold text-slate-800">{transferencia.total_piezas} unidades</p>
               </div>
             </div>
 
-            <div className="pending-grid">
-              <div>
-                <p className="info-label">Enviado por</p>
-                <p className="info-value">{transferencia.usuario_origen}</p>
-              </div>
-              <div>
-                <p className="info-label">Fecha de envío</p>
-                <p className="info-value">{formatFecha(transferencia.fecha_envio)}</p>
-              </div>
-              <div>
-                <p className="info-label">Productos</p>
-                <p className="info-value">
-                  {transferencia.total_productos} productos ({transferencia.total_piezas} piezas)
-                </p>
-              </div>
-              <div>
-                <p className="info-label">Estado</p>
-                {getEstadoBadge(transferencia.estado)}
+            <div className="mb-6 flex-1">
+              <p className="text-[10px] uppercase font-black text-slate-400 mb-1">Observaciones</p>
+              <div className="p-3 bg-white border border-dashed border-slate-200 rounded-lg text-sm text-slate-600 italic">
+                "{transferencia.motivo || 'Sin comentarios adicionales'}"
               </div>
             </div>
 
-            <div className="bg-gray-50 p-3 rounded-md">
-              <p className="info-label">Motivo</p>
-              <p className="text-sm text-gray-700">{transferencia.motivo}</p>
+            <div className="flex gap-3 pt-4 border-t border-slate-100">
+              <button
+                className="flex-1 btn-recibir flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all text-sm"
+                onClick={() => onRecibir(transferencia.id_transferencia)}
+              >
+                <PackageCheck className="w-5 h-5" />
+                CONFIRMAR RECEPCIÓN
+              </button>
+              <button
+                className="w-12 h-12 flex items-center justify-center bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors"
+                onClick={() => onCancelar(transferencia.id_transferencia)}
+                title="Rechazar/Cancelar"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
             </div>
-          </div>
-
-          <div className="flex flex-col gap-2 ml-6">
-            <Button
-              variant="success"
-              onClick={() => onRecibir(transferencia.id_transferencia)}
-            >
-              <PackageCheck className="w-4 h-4" />
-              Recibir
-            </Button>
           </div>
         </Card>
       ))}
 
       {transferencias.length === 0 && (
-        <Card className="p-12">
-          <div className="text-center">
-            <PackageCheck className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No hay transferencias pendientes
+        <div className="lg:col-span-2">
+          <Card className="p-20 text-center bg-slate-100/30 border-dashed">
+            <PackageCheck className="w-20 h-20 text-slate-200 mx-auto mb-6" />
+            <h3 className="text-2xl font-black text-slate-300 uppercase tracking-tighter mb-2">
+              Bandeja de Entrada Vacía
             </h3>
-            <p className="text-gray-500">
-              Cuando otras sucursales envíen productos, aparecerán aquí para que los recibas
+            <p className="text-slate-400 font-bold max-w-sm mx-auto">
+              No tienes transferencias pendientes por recibir de otras sucursales en este momento.
             </p>
-          </div>
-        </Card>
+          </Card>
+        </div>
       )}
     </div>
   );
@@ -387,6 +317,8 @@ export default function MisTransferencias() {
   const [tabActiva, setTabActiva] = useState('todas');
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [isOpenCancel, setIsOpenCancel] = useState(false);
+  const [loadingCancel, setLoadingCancel] = useState(false);
   const [fechaDesde, setFechaDesde] = useState<string>(fechaFormateada);
   const [fechaHasta, setFechaHasta] = useState<string>(fechaFormateada);
   const [transferencias, setTransferencias] = useState<TransferenciaDTO[]>([]);
@@ -398,22 +330,28 @@ export default function MisTransferencias() {
 
 
   useEffect(() => {
-    obtenerTransferenciasApi(user.id_usuario, user.id_rol, fechaDesde, fechaHasta).then(res => {
-      if (res.success) {
-        setTransferencias(res.data);
-      } else {
-        setTransferencias([]);
-      }
-    });
+    setLoading(true);
+    const fetchTransferencias = async () => {
+      try {
+        const res = await obtenerTransferenciasApi(user.id_usuario, user.id_rol, fechaDesde, fechaHasta);
+        if (res.success) {
+          setTransferencias(res.data);
+        } else {
+          setTransferencias([]);
+        }
 
-    obtenerTransferenciasPendientesApi(user.id_sucursal).then(res => {
-      if (res.success) {
-        setTransferenciasPendientes(res.data);
-      } else {
-        setTransferenciasPendientes([]);
+        const resPendientes = await obtenerTransferenciasPendientesApi(user.id_sucursal);
+        if (resPendientes.success) {
+          setTransferenciasPendientes(resPendientes.data);
+        } else {
+          setTransferenciasPendientes([]);
+        }
+      } finally {
+        setLoading(false);
       }
-    });
+    };
 
+    fetchTransferencias();
   }, [fechaDesde, fechaHasta]);
 
 
@@ -424,14 +362,53 @@ export default function MisTransferencias() {
       t.id_sucursal_origen === user.id_sucursal
     );
 
+  const handlePrintTransferencia = async (id: number) => {
+    try {
+      const resDetalle = await obtenerDetalleTransferenciaApi(id);
+      if (resDetalle.success) {
+        const transfer = resDetalle.data;
+        const printerName = localStorage.getItem("printer_device");
+
+        if (!printerName) {
+          toast.error("No se ha configurado una impresora en ajustes");
+          return;
+        }
+
+        const ticketData = {
+          printerName,
+          id_transferencia: transfer.id_transferencia,
+          sucursal_origen: transfer.sucursal_origen,
+          sucursal_destino: transfer.sucursal_destino,
+          usuario_origen: transfer.usuario_origen,
+          fecha: transfer.fecha_envio || transfer.fecha_creacion,
+          productos: transfer.productos, // [{ nombre_producto, nombre_presentacion, cantidad_enviada }]
+          motivo: transfer.motivo,
+          cortar: localStorage.getItem("printer_cut") !== "false"
+        };
+
+        // @ts-ignore
+        await window["electron-api"]?.printTicketTransferenciaEscPos(ticketData);
+        toast.success("Ticket de transferencia enviado a imprimir");
+      } else {
+        toast.error("No se pudo obtener el detalle para imprimir");
+      }
+    } catch (error) {
+      console.error("Error al imprimir transferencia:", error);
+      toast.error("Error al intentar imprimir el ticket");
+    }
+  };
+
   // Handlers
   const handleEnviar = async (id: number) => {
     const res = await enviarTransferenciasApi(id, user.id_usuario);
     if (res.success) {
-
       toast.success("Transferencia enviada correctamente", {
         description: "La transferencia ha sido enviada y está en tránsito."
       });
+
+      // Imprimir ticket automáticamente al enviar
+      handlePrintTransferencia(id);
+
       obtenerTransferenciasApi(user.id_usuario, user.id_rol, fechaDesde, fechaHasta).then(res => {
         if (res.success) {
           setTransferencias(res.data);
@@ -439,7 +416,6 @@ export default function MisTransferencias() {
           setTransferencias([]);
         }
       });
-
     } else {
       toast.error("Error al enviar la transferencia", {
         description: res.message
@@ -448,8 +424,39 @@ export default function MisTransferencias() {
   };
 
   const handleCancelar = (id: number) => {
-    console.log('Cancelar transferencia:', id);
-    alert(`Cancelando transferencia #${id}`);
+    setIdTransferencia(id);
+    setIsOpenCancel(true);
+  };
+
+  const handleConfirmarCancelacion = async () => {
+    if (!idTransferencia) return;
+
+    try {
+      setLoadingCancel(true);
+      const res = await cancelarTransferenciaApi(idTransferencia, user.id_usuario);
+      if (res.success) {
+        toast.success("Transferencia cancelada", {
+          description: res.message
+        });
+
+        // Recargar listas
+        obtenerTransferenciasApi(user.id_usuario, user.id_rol, fechaDesde, fechaHasta).then(res => {
+          if (res.success) setTransferencias(res.data);
+        });
+
+        obtenerTransferenciasPendientesApi(user.id_sucursal).then(res => {
+          if (res.success) setTransferenciasPendientes(res.data);
+        });
+
+        setIsOpenCancel(false);
+      } else {
+        toast.error("Error al cancelar", { description: res.message });
+      }
+    } catch (error: any) {
+      toast.error("Error", { description: error.message });
+    } finally {
+      setLoadingCancel(false);
+    }
   };
 
   const handleVerDetalle = (id: number) => {
@@ -478,81 +485,69 @@ export default function MisTransferencias() {
   ];
 
   return (
-    <div className="p-0">
+    <div className="p-2">
       <DialogConfirmarAceptarTranseferencia isOpen={isOpen} setIsOpen={setIsOpen} idTransferencia={idTransferencia} />
+      <DialogConfirmarCancelacion
+        isOpen={isOpenCancel}
+        setIsOpen={setIsOpenCancel}
+        onConfirm={handleConfirmarCancelacion}
+        idTransferencia={idTransferencia}
+        loading={loadingCancel}
+      />
       <div className="mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2 transferencias-header-content">
-            <div className="bg-blue-100 p-2 rounded-lg">
-              <ArrowRightLeft className="w-6 h-6 text-blue-600" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Transferencias de Productos
-            </h1>
-          </div>
-          <p className="text-gray-600 text-center">
-            {user.id_rol === 1
-              ? 'Vista de administrador - Todas las sucursales'
-              : `Transferencias de ${user.sucursal}`
-            }
-          </p>
-        </div>
-
-        {/* Tabs */}
-        <Card className="mb-6">
+        {/* Tabs Filter Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
           <Tabs
             tabs={tabs}
             activeTab={tabActiva}
-            onChange={() => { setTabActiva(tabActiva === 'todas' ? 'pendientes-recibir' : 'todas') }}
+            onChange={(id) => setTabActiva(id as string)}
           />
-        </Card>
 
-        {/* Contenido según tab activa */}
-        {tabActiva === 'todas' && (
-          <Card>
+          {tabActiva === 'todas' && (
+            <div className="flex items-center gap-3 bg-white p-2 px-4 rounded-xl border border-slate-200 shadow-sm self-end md:self-auto mb-4 md:mb-0">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-blue-600" />
+                <input
+                  type="date"
+                  className="date-input-aero text-xs"
+                  defaultValue={fechaDesde}
+                  onChange={(e) => setFechaDesde(e.target.value)}
+                />
+              </div>
+              <span className="text-slate-400 font-black">—</span>
+              <input
+                type="date"
+                className="date-input-aero text-xs"
+                defaultValue={fechaHasta}
+                onChange={(e) => setFechaHasta(e.target.value)}
+              />
+            </div>
+          )}
+        </div>
 
+        {/* Contenido Principal */}
+        <div className="mt-4">
+          {tabActiva === 'todas' ? (
+            <div className="bg-white rounded-xl overflow-hidden border border-slate-100 shadow-sm">
+              <TablaTransferencias
+                transferencias={transferenciasVisibles}
+                onEnviar={handleEnviar}
+                onCancelar={handleCancelar}
+                onVerDetalle={handleVerDetalle}
+                onImprimir={handlePrintTransferencia}
+                loading={loading}
+              />
+            </div>
+          ) : (
             <div>
-              <section className="transfer-filters">
-                <div className="date-input-group">
-                  <p className="font-bold text-primary">Fecha desde</p>
-                  <input type="date" className="date-input" defaultValue={fechaDesde} onChange={(e) => setFechaDesde(e.target.value)} />
-                </div>
-                <div className="date-input-group">
-                  <p className="font-bold text-primary">Fecha hasta</p>
-                  <input type="date" className="date-input" defaultValue={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)} />
-                </div>
-              </section>
-
+              <TransferenciasPendientesRecibir
+                transferencias={transferenciasPendientes}
+                onRecibir={handleRecibir}
+                onCancelar={handleCancelar}
+              />
             </div>
-
-            <TablaTransferencias
-              transferencias={transferenciasVisibles}
-              onEnviar={handleEnviar}
-              onCancelar={handleCancelar}
-              onVerDetalle={handleVerDetalle}
-              loading={loading}
-              setLoading={setLoading}
-            />
-          </Card>
-        )}
-
-        {tabActiva === 'pendientes-recibir' && (
-          <div>
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Transferencias Pendientes de Recibir
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">
-                Productos enviados desde otras sucursales esperando tu confirmación
-              </p>
-            </div>
-            <TransferenciasPendientesRecibir
-              transferencias={transferenciasPendientes}
-              onRecibir={handleRecibir}
-            />
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

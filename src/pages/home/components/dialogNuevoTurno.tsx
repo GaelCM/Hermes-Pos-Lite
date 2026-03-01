@@ -61,6 +61,13 @@ export default function DialogNuevoTurno({ isOpen, onOpenChange, onCajaOpened }:
                 })
                 onOpenChange(false)
                 onCajaOpened()
+
+                // Abrir cajón de dinero al iniciar turno nuevo
+                const printerName = localStorage.getItem("printer_device");
+                if (printerName) {
+                    // @ts-ignore
+                    window["electron-api"]?.openCashDrawer(printerName);
+                }
             } else {
                 toast("Error al abrir el turno.", {
                     description: res.message,
@@ -81,10 +88,10 @@ export default function DialogNuevoTurno({ isOpen, onOpenChange, onCajaOpened }:
             <Dialog open={isOpen} onOpenChange={onOpenChange}>
                 <DialogContent>
                     {loading && (
-                        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
+                        <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
                             <div className="text-center">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                                <p className="mt-2 text-sm text-muted-foreground">Abriendo turno...</p>
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                                <p className="mt-4 text-slate-600">Cargando sucursales...</p>
                             </div>
                         </div>
                     )}

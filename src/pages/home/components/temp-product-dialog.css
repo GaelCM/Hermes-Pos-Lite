@@ -1,0 +1,83 @@
+/* Temp Product Dialog Aero Styling */
+
+.temp-product-container {
+    background: #f8fafc;
+}
+
+.temp-product-header {
+    background: linear-gradient(to bottom, #eff6ff, #dbeafe);
+    border-bottom: 2px solid #bfdbfe;
+    padding-bottom: 1.5rem !important;
+}
+
+.header-icon-temp {
+    background: white;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+}
+
+.field-group-aero {
+    background: white;
+    padding: 1.25rem;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.input-aero-temp {
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+    height: 3rem !important;
+    color: #0f172a !important;
+    /* slate-950 (near black) */
+    transition: all 0.2s;
+}
+
+.input-aero-temp:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1) !important;
+    background: white !important;
+}
+
+.label-aero-temp {
+    font-size: 0.7rem !important;
+    font-weight: 950 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    color: #000000 !important;
+    /* Pure black */
+    margin-bottom: 0.4rem !important;
+}
+
+.btn-add-temp {
+    background: linear-gradient(to bottom, #22c55e, #16a34a) !important;
+    border-bottom: 4px solid #14532d !important;
+    color: white !important;
+    font-weight: 900 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1.5px !important;
+    height: 3.75rem !important;
+    border-radius: 14px !important;
+    transition: all 0.1s !important;
+    width: 100%;
+}
+
+.btn-add-temp:active {
+    transform: translateY(2px) !important;
+    border-bottom-width: 0 !important;
+}
+
+.currency-box {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: 950;
+    color: #1e293b;
+    /* slate-800 */
+}
+
+.input-with-currency {
+    padding-left: 2rem !important;
+}

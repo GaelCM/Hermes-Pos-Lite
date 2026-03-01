@@ -1,32 +1,32 @@
-
 import * as LucideIcons from "lucide-react";
-import { Plus, X, Lock, LogOut } from "lucide-react"; // Import some specific ones needed locally in JSX
+import { Plus, X, Lock, LogOut } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router"
-import { Button } from "./ui/button";
+import { useHotkeys } from "react-hotkeys-hook";
 import AddCliente from "./dialogAddCliente";
 import { useCurrentUser } from "@/contexts/currentUser";
 import logo from "../assets/logo.jpg";
+import { useListaProductos } from "@/contexts/listaProductos";
+import "./sidebar.css";
 
 type sideBarProps = {
     sidebarOpen: boolean,
     setSidebarOpen: (open: boolean) => void;
 }
 
-
-
 export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
-
     const { user } = useCurrentUser();
-
+    const { carritoActivo, asignarClienteCarrito } = useListaProductos();
     const navigate = useNavigate();
     const location = useLocation();
     const [isOpen, setOpen] = useState(false);
     const rutaActual = location.pathname;
 
+    useHotkeys('f1', (e) => {
+        e.preventDefault();
+        navigate("/");
+    }, { enableOnFormTags: true });
 
-
-    // Mapa de respaldo por si el backend no envía el icono o la DB tiene datos genéricos
     const fallbackIconMap: Record<string, string> = {
         "Dashboard": "Home",
         "Transferencias": "ArrowRightLeft",
@@ -40,36 +40,22 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
         "Configuracion": "Settings"
     };
 
-    // Los permisos ahora son objetos menuItem
     const sidebarItemsFiltrados = (user?.permisos || []).map((permiso) => {
-        // 1. Intentar obtener el nombre del icono desde el permiso (Backend)
         let iconName = (permiso.icon || "").trim();
-
-        // 2. Si no viene del backend o está vacío, usar el mapa de respaldo basado en el nombre del menú
         if (!iconName) {
             iconName = fallbackIconMap[permiso.nombre_menu] || "Home";
         }
-
-        // Dynamic lookup from all Lucide icons
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const allIcons = LucideIcons as any;
-
-
-        // Try exact match or case-insensitive match
         let Icon = allIcons[iconName];
 
         if (!Icon) {
-            // Case-insensitive fallback
             const lowerName = iconName.toLowerCase();
             const matchingKey = Object.keys(allIcons).find(key => key.toLowerCase() === lowerName);
-            if (matchingKey) {
-                Icon = allIcons[matchingKey];
-            }
+            if (matchingKey) Icon = allIcons[matchingKey];
         }
 
-        if (!Icon) {
-            Icon = LucideIcons.Home;
-        }
+        if (!Icon) Icon = LucideIcons.Home;
 
         return {
             id: permiso.id_menu,
@@ -79,86 +65,91 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
         };
     });
 
-
     return (
         <>
             {sidebarOpen && (
-                <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
             )}
 
-            {/* Sidebar */}
-            {/* Sidebar */}
-            <div className={`sidebar-container ${sidebarOpen ? "open" : ""}`}>
-                <div className="sidebar-content">
-                    <div className="flex items-center justify-between mb-6 md:mb-8">
-                        <div className="flex items-center gap-2">
-                            <img src={logo} alt="" className="w-52 h-42" />
-                        </div>
-                        <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setSidebarOpen(false)}>
-                            <X className="w-4 h-4" />
-                        </Button>
-                    </div>
+            <aside className={`aero-sidebar ${sidebarOpen ? "open" : "closed"}`}>
+                <div className="sidebar-logo-container">
+                    <img src={logo} alt="Logo" className="sidebar-logo" />
+                    <button className="close-sidebar-mobile" onClick={() => setSidebarOpen(false)}>
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
 
-                    <div className="space-y-2 mb-4 md:mb-6">
+                <div className="sidebar-scroll-content">
+                    <button className="new-sale-btn" onClick={() => navigate("/")}>
+                        <Plus className="w-5 h-5" />
+                        <span>Nueva Venta (F1)</span>
+                    </button>
 
-                        <Button className="w-full justify-start gap-2 text-sm md:text-base" size="sm">
-                            <Link to={"/"} className="flex w-full justify-start items-center gap-2 text-sm md:text-base">
-                                <Plus className="w-4 h-4" />
-                                <span className="hidden sm:inline">Nueva Venta</span>
-                                <span className="sm:hidden">Venta</span>
-                            </Link>
-                        </Button>
-                    </div>
-
-                    <nav className="space-y-1 md:space-y-2">
+                    <nav className="aero-nav-list">
                         {sidebarItemsFiltrados.map((item) => {
                             const Icon = item.icon;
+                            const isActive = rutaActual === item.ruta;
                             return (
                                 <Link
                                     key={item.id}
                                     to={item.ruta}
                                     onClick={() => {
-                                        setSidebarOpen(false); // Cerrar sidebar en móvil al seleccionar
+                                        if (window.innerWidth < 768) {
+                                            setSidebarOpen(false);
+                                        }
                                     }}
-                                    className={`w-full flex items-center gap-2 md:gap-3 px-2 md:px-3 py-2 rounded-lg text-left transition-colors text-sm md:text-base ${rutaActual === item.ruta
-                                        ? "bg-primary text-sidebar-primary-foreground"
-                                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                                        }`}
+                                    className={`aero-nav-item ${isActive ? 'active' : ''}`}
                                 >
-                                    <Icon className="w-4 h-4 md:w-5 md:h-5 shrink-0" />
-                                    <span className="truncate">{item.label}</span>
+                                    <Icon className="aero-nav-item-icon" />
+                                    <span>{item.label}</span>
                                 </Link>
                             );
                         })}
                     </nav>
-
                 </div>
-                {/* Perfil de usuario al fondo */}
-                <div className="sidebar-footer flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-lg font-bold text-primary">
-                        {user?.usuario?.[0]?.toUpperCase() || "U"}
+
+                <div className="sidebar-footer">
+                    <div className="user-profile-mini">
+                        <div className="user-avatar-circle">
+                            {user?.usuario?.[0]?.toUpperCase() || "U"}
+                        </div>
+                        <div className="user-info-text">
+                            <span className="user-name-label">{user?.usuario}</span>
+                            <span className="user-role-label">{user?.rol}</span>
+                        </div>
                     </div>
-                    <div className="flex flex-col min-w-0 flex-1">
-                        <span className="font-semibold text-sidebar-foreground truncate">{user?.usuario}</span>
-                        <span className="text-xs text-sidebar-foreground/70 truncate">{user?.email}</span>
-                        <span className="text-xs text-sidebar-foreground/70 truncate">{user?.rol}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => navigate("/cerrar-caja")} title="Cerrar Caja">
+
+                    <div className="footer-actions">
+                        <button className="aero-footer-btn btn-close-box" onClick={() => navigate("/cerrar-caja")}>
                             <Lock className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => {
+                            <span>Cerrar Caja</span>
+                        </button>
+                        <button className="aero-footer-btn btn-logout" onClick={() => {
+                            if (localStorage.getItem("openCaja") != null) {
+                                navigate("/cerrar-caja");
+                                return;
+                            }
                             localStorage.removeItem("tkn");
                             localStorage.removeItem("currentUser");
                             localStorage.removeItem("openCaja");
                             navigate("/login");
                         }}>
                             <LogOut className="w-4 h-4" />
-                        </Button>
+                            <span>Salir</span>
+                        </button>
                     </div>
                 </div>
-            </div>
-            <AddCliente isOpen={isOpen} setIsOpen={setOpen} />
+            </aside>
+
+            <AddCliente
+                isOpen={isOpen}
+                setIsOpen={setOpen}
+                onSelect={(selectedCliente) => {
+                    if (carritoActivo) {
+                        asignarClienteCarrito(carritoActivo, selectedCliente);
+                    }
+                }}
+            />
         </>
     )
 }

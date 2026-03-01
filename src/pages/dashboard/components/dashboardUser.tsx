@@ -31,6 +31,7 @@ ChartJS.register(
 );
 
 export default function DashboardUser({ idTurno }: { idTurno: number }) {
+
     const [dashboard, setDashboard] = useState<DashboardTurno | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -232,6 +233,24 @@ export default function DashboardUser({ idTurno }: { idTurno: number }) {
                         <p className="kpi-detail">Ventas con tarjeta</p>
                     </div>
                 </div>
+
+                <div className="kpi-card kpi-danger">
+                    <div className="kpi-icon">📝</div>
+                    <div className="kpi-content">
+                        <p className="kpi-label">Crédito</p>
+                        <h2 className="kpi-value">{formatCurrency(dashboard.metricas_principales.ventas_credito)}</h2>
+                        <p className="kpi-detail">Ventas por cobrar</p>
+                    </div>
+                </div>
+
+                <div className="kpi-card kpi-success">
+                    <div className="kpi-icon">🤝</div>
+                    <div className="kpi-content">
+                        <p className="kpi-label">Abonos</p>
+                        <h2 className="kpi-value">{formatCurrency(dashboard.metricas_principales.abonos_credito)}</h2>
+                        <p className="kpi-detail">Cobranza recibida</p>
+                    </div>
+                </div>
             </div>
 
             {/* Control de Efectivo y Egresos */}
@@ -244,6 +263,14 @@ export default function DashboardUser({ idTurno }: { idTurno: number }) {
                             <strong>{formatCurrency(dashboard.control_efectivo.efectivo_inicial)}</strong>
                         </div>
                         <div className="info-row">
+                            <span>Ventas Efectivo:</span>
+                            <strong>+ {formatCurrency(dashboard.metricas_principales.ventas_efectivo)}</strong>
+                        </div>
+                        <div className="info-row">
+                            <span>Abonos Recibidos:</span>
+                            <strong>+ {formatCurrency(dashboard.metricas_principales.abonos_credito)}</strong>
+                        </div>
+                        <div className="info-row highlight-blue">
                             <span>Efectivo Esperado:</span>
                             <strong>{formatCurrency(dashboard.control_efectivo.efectivo_esperado)}</strong>
                         </div>
@@ -269,15 +296,19 @@ export default function DashboardUser({ idTurno }: { idTurno: number }) {
                     <div className="info-rows">
                         <div className="info-row">
                             <span>Compras:</span>
-                            <strong>{formatCurrency(dashboard.egresos.total_compras)}</strong>
+                            <strong>{formatCurrency(dashboard.egresos.total_compras)} <small className="text-gray-500">({formatCurrency(dashboard.egresos.compras_efectivo)} efec.)</small></strong>
                         </div>
                         <div className="info-row">
                             <span>Gastos:</span>
-                            <strong>{formatCurrency(dashboard.egresos.total_gastos)}</strong>
+                            <strong>{formatCurrency(dashboard.egresos.total_gastos)} <small className="text-gray-500">({formatCurrency(dashboard.egresos.gastos_efectivo)} efec.)</small></strong>
                         </div>
                         <div className="info-row highlight">
-                            <span>Total Egresos:</span>
-                            <strong className="negative">{formatCurrency(dashboard.egresos.total_egresos)}</strong>
+                            <span>Total Egresos (Efectivo):</span>
+                            <strong className="negative">{formatCurrency(dashboard.egresos.total_egresos_efectivo)}</strong>
+                        </div>
+                        <div className="info-row">
+                            <span>Total General:</span>
+                            <span className="font-semibold">{formatCurrency(dashboard.egresos.total_egresos)}</span>
                         </div>
                     </div>
                 </div>

@@ -1,0 +1,80 @@
+/* Product Table Aero Styling */
+
+.product-row {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.product-row:hover:not(.out-of-stock) {
+    background-color: #f0f7ff !important;
+    transform: scale(1.002);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    z-index: 10;
+}
+
+.product-row.selected {
+    background: linear-gradient(to bottom, #dbeafe, #bfdbfe) !important;
+    border-color: #93c5fd !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Badge Enhancements */
+.badge-granel {
+    background: linear-gradient(to bottom, #22c55e, #16a34a) !important;
+    color: white !important;
+    border: 1px solid #15803d !important;
+    box-shadow: 0 1px 2px rgba(22, 163, 74, 0.2);
+    font-weight: 800 !important;
+    text-transform: uppercase;
+    font-size: 0.65rem !important;
+}
+
+.badge-pieza {
+    background: linear-gradient(to bottom, #3b82f6, #2563eb) !important;
+    color: white !important;
+    border: 1px solid #1d4ed8 !important;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    font-weight: 800 !important;
+    text-transform: uppercase;
+    font-size: 0.65rem !important;
+}
+
+.badge-paquete {
+    background: linear-gradient(to bottom, #f97316, #ea580c) !important;
+    color: white !important;
+    border: 1px solid #c2410c !important;
+    box-shadow: 0 1px 2px rgba(234, 88, 12, 0.2);
+    font-weight: 800 !important;
+    text-transform: uppercase;
+    font-size: 0.65rem !important;
+}
+
+.badge-bajo-stock {
+    background: linear-gradient(to bottom, #ef4444, #dc2626) !important;
+    color: white !important;
+    border: 1px solid #b91c1c !important;
+    box-shadow: 0 1px 2px rgba(220, 38, 38, 0.2);
+    animation: pulse-subtle 2s infinite;
+}
+
+.badge-agotado {
+    background: #f8fafc !important;
+    color: #64748b !important;
+    border: 1px solid #e2e8f0 !important;
+    text-transform: uppercase;
+    font-weight: 800 !important;
+}
+
+@keyframes pulse-subtle {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.8;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}

@@ -24,16 +24,25 @@ export interface ResumenCorte {
         total: number;
         efectivo: number;
         tarjeta: number;
+        credito: number;
         numero: number;
+    };
+    creditos: {
+        ventas_credito: number;
+        abonos_recibidos: number;
     };
     egresos: {
         compras: number;
+        compras_efectivo: number;
         gastos: number;
+        gastos_efectivo: number;
         total: number;
+        total_efectivo: number;
     };
     movimientos: {
         retiros: number;
         depositos: number;
+        total_movimientos: number;
     };
     efectivo: {
         inicial: number;

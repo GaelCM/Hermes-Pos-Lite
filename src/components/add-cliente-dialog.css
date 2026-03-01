@@ -1,0 +1,71 @@
+/* Add Cliente Dialog Aero Specifics */
+
+.add-cliente-container {
+    background: #f8fafc;
+}
+
+.cliente-search-wrapper {
+    background: white;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.search-input-aero {
+    border: 2px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    transition: all 0.2s;
+}
+
+.search-input-aero:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1) !important;
+}
+
+.btn-cliente-row {
+    border: 2px solid #f1f5f9 !important;
+    background: white !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.btn-cliente-row:hover {
+    background: #eff6ff !important;
+    border-color: #bfdbfe !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Fix visibility in selected state */
+.btn-cliente-row.selected {
+    background: linear-gradient(to bottom, #2563eb, #1d4ed8) !important;
+    border-color: #1e40af !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+}
+
+.btn-cliente-row.selected p,
+.btn-cliente-row.selected span,
+.btn-cliente-row.selected div {
+    color: white !important;
+}
+
+.btn-cliente-row.selected .icon-subtle {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.btn-cliente-row.selected .address-box {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.btn-cliente-row.selected .id-badge {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.id-badge {
+    font-weight: 800;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.5rem;
+}
+
+.address-box {
+    transition: background 0.2s;
+}

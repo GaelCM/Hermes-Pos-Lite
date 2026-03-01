@@ -5,12 +5,22 @@ import { Badge } from "./ui/badge"
 import type { ProductoVenta } from "@/types/Producto"
 import { useListaProductos } from "@/contexts/listaProductos"
 import { getProductos } from "@/api/productosApi/productosApi"
-import { ShoppingCart, Search, SquarePen, RefreshCw } from "lucide-react"
+import { ShoppingCart, Search, SquarePen, RefreshCw, Trash2, AlertTriangle } from "lucide-react"
 import { Input } from "./ui/input"
 import { toast } from "sonner"
 import { Link } from "react-router"
 import { useCurrentUser } from "@/contexts/currentUser"
 import DialogSetGranel from "@/pages/home/components/dialogSetGranel"
+import { eliminarProductoApi } from "@/api/productosApi/productosApi"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog"
+import "./product-table.css"
 
 
 
@@ -21,9 +31,10 @@ type Props = {
   searchLocal?: boolean;
   onAddProduct?: (product: ProductoVenta, quantity?: number) => void;
   allowOutOfStock?: boolean;
+  setIsOpen?: (isOpen: boolean) => void;
 }
 
-export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddProduct, allowOutOfStock = false }: Props) {
+export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddProduct, allowOutOfStock = false, setIsOpen }: Props) {
   const [productos, setProductos] = useState<ProductoVenta[]>([])
   const { user } = useCurrentUser();
   const [filteredProductos, setFilteredProductos] = useState<ProductoVenta[]>([])
@@ -38,6 +49,11 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
   const [openGranel, setOpenGranel] = useState(false);
   const [productoGranelPendiente, setProductoGranelPendiente] = useState<ProductoVenta | null>(null);
 
+  // Estados para Eliminar
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<ProductoVenta | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const addProductFn = onAddProduct || addProductVenta;
 
   const handleTryAddProduct = useCallback((p: ProductoVenta) => {
@@ -51,6 +67,7 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
         inputRef?.current?.focus();
         searchInputRef.current?.focus();
       }, 100);
+      setIsOpen?.(false);
     }
   }, [searchLocal, addProductFn, inputRef]);
 
@@ -62,8 +79,30 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
         inputRef?.current?.focus();
         searchInputRef.current?.focus();
       }, 100);
+      setIsOpen?.(false);
     }
   }, [productoGranelPendiente, addProductFn, inputRef]);
+
+  const handleDelete = async () => {
+    if (!productToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const res = await eliminarProductoApi(productToDelete.id_producto);
+      if (res.success) {
+        toast.success("Producto eliminado correctamente");
+        setIsDeleteDialogOpen(false);
+        loadProducts(true); // Recargar lista
+      } else {
+        toast.error(res.message || "Error al eliminar el producto");
+      }
+    } catch (error) {
+      console.error("Error al eliminar producto:", error);
+      toast.error("Error al conectar con el servidor");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const loadProducts = async (forceApi = false) => {
     setLoading(true)
@@ -108,7 +147,9 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
   useEffect(() => {
     const lowercasedFilter = searchTerm.toLowerCase();
     const filteredData = productos.filter((item) => {
-      return item.nombre_producto.toLowerCase().includes(lowercasedFilter) || item.sku_pieza.toLowerCase().includes(lowercasedFilter);
+      const nombre = (item.nombre_producto || "").toLowerCase();
+      const sku = (item.sku_pieza || "").toLowerCase();
+      return nombre.includes(lowercasedFilter) || sku.includes(lowercasedFilter);
     });
     setFilteredProductos(filteredData);
     setCurrentPage(1);
@@ -222,7 +263,7 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
       <div className="flex-1 overflow-y-auto w-full" ref={tableRef}>
         <table className="w-full table-auto">
           <thead className="sticky top-0 bg-background">
-            <tr className="text-left text-sm text-muted-foreground border-b">
+            <tr className="text-left text-base font-bold text-muted-foreground border-b">
               <th className="px-3 py-2">Sku Presentación</th>
               <th className="px-3 py-2">Nombre</th>
               <th className="px-3 py-2">Unidad</th>
@@ -244,42 +285,40 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
                 <tr
                   key={p.id_unidad_venta}
                   data-index={index}
-
-                  className={`align-top border-t cursor-pointer transition-colors ${isSelected
-                    ? 'bg-primary/10 border-primary shadow-sm'
-                    : 'hover:bg-muted/50'
-                    } ${outStock && !allowOutOfStock ? 'opacity-50' : ''}`}
+                  className={`product-row ${isSelected ? 'selected' : ''} ${outStock && !allowOutOfStock ? 'opacity-50 out-of-stock' : ''}`}
                 >
-                  <td className="px-3 py-3 align-middle text-sm text-muted-foreground">{p.sku_presentacion}</td>
+                  <td className="px-3 py-3 align-middle text-base font-bold text-muted-foreground">{p.sku_presentacion}</td>
                   <td className="px-3 py-3 align-middle">
-                    <div className="font-medium text-sm">{p.nombre_producto + " " + (p.es_granel ? "Granel" : p.nombre_presentacion) + " " + (p.factor_conversion_cantidad > 1 ? p.factor_conversion_cantidad + " Pzas" : "")}</div>
+                    <div className="font-bold text-base">{p.nombre_producto + " " + (p.es_granel ? "Granel" : p.nombre_presentacion) + " " + (p.factor_conversion_cantidad > 1 ? p.factor_conversion_cantidad + " Pzas" : "")}</div>
                   </td>
 
-                  <td className="px-3 py-3 align-middle text-sm ">
-                    <Badge className={`${p.es_granel ? 'bg-black' : p.nombre_presentacion === "Pieza" ? 'bg-primary' : 'bg-orange-600'}`}>{p.es_granel ? "Granel" : p.nombre_presentacion}</Badge>
+                  <td className="px-3 py-3 align-middle text-base font-bold">
+                    <Badge className={p.es_granel ? 'badge-granel' : p.nombre_presentacion === "Pieza" ? 'badge-pieza' : 'badge-paquete'}>
+                      {p.es_granel ? "Granel" : p.nombre_presentacion}
+                    </Badge>
                   </td>
 
                   <td className="px-3 py-3 align-middle">
-                    <div className="text-sm text-muted-foreground max-w-md truncate">{p.descripcion}</div>
+                    <div className="text-base font-bold text-muted-foreground max-w-md truncate">{p.descripcion}</div>
                   </td>
                   <td className="px-3 py-3 align-middle">
-                    <div className="text-sm font-semibold">${p.precio_venta.toFixed(2)}</div>
+                    <div className="text-base font-bold">${p.precio_venta.toFixed(2)}</div>
                   </td>
                   <td className="px-3 py-3 align-middle">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">{p.stock_disponible_presentacion}</span>
+                      <span className="font-bold text-base">{p.stock_disponible_presentacion}</span>
                       {outStock ? (
-                        <Badge variant="destructive">Agotado</Badge>
+                        <Badge className="badge-agotado">Agotado</Badge>
                       ) : lowStock ? (
-                        <Badge variant="secondary" className="bg-red-500 text-white">Bajo</Badge>
+                        <Badge className="badge-bajo-stock">Bajo</Badge>
                       ) : null}
                     </div>
                   </td>
                   <td className="px-3 py-3 align-middle">
-                    <div className="text-sm font-semibold">{p.stock_piezas}</div>
+                    <div className="text-base font-bold">{p.stock_piezas}</div>
                   </td>
                   <td className="px-3 py-3 align-middle">
-                    <div className="text-sm font-semibold">${p.precio_mayoreo.toFixed(2)}</div>
+                    <div className="text-base font-bold">${p.precio_mayoreo.toFixed(2)}</div>
                   </td>
 
 
@@ -300,7 +339,7 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
 
                     {user.id_rol === 1 && p.es_producto_compuesto === 0 ? (
                       <Link to={`/productos/editProducto?id=${p.id_producto}`} >
-                        <Button size="sm" variant={"default"} className="ml-2" aria-label={`Editar ${p.nombre_producto}`}>
+                        <Button size="sm" variant={"default"} className="ml-2" aria-label={`Editar ${p.nombre_producto}`} onClick={() => { setIsOpen?.(false) }}>
                           <SquarePen></SquarePen>
                         </Button>
                       </Link>
@@ -308,11 +347,27 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
 
                     {user.id_rol === 1 && p.es_producto_compuesto === 1 ? (
                       <Link to={`/productos/editProductoEspecial?id=${p.id_producto}&suc=${idSucursal}`} >
-                        <Button size="sm" variant={"outline"} className="ml-2" aria-label={`Editar ${p.nombre_producto}`}>
+                        <Button size="sm" variant={"outline"} className="ml-2" aria-label={`Editar ${p.nombre_producto}`} onClick={() => { setIsOpen?.(false) }}>
                           <SquarePen></SquarePen>
                         </Button>
                       </Link>
                     ) : null}
+
+                    {user.id_rol === 1 && (
+                      <Button
+                        size="sm"
+                        variant={"destructive"}
+                        className="ml-2"
+                        aria-label={`Eliminar ${p.nombre_producto}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setProductToDelete(p);
+                          setIsDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </td>
                 </tr>
               )
@@ -391,6 +446,44 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
         onConfirm={handleConfirmGranel}
         inputRefMain={searchInputRef}
       />
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Confirmar eliminación de producto
+            </DialogTitle>
+            <DialogDescription className="py-4">
+              ¿Estás seguro de que deseas eliminar permanentemente <b>{productToDelete?.nombre_producto}</b>?
+              <br /><br />
+              <span className="font-bold text-foreground block mb-2">Repercusiones importantes:</span>
+              <ul className="list-disc pl-5 space-y-1 text-sm">
+                <li>Se eliminará todo el <b>inventario</b> actual de este producto en todas las sucursales.</li>
+                <li>Se borrarán todos los <b>precios y variantes</b> asociados.</li>
+                <li>Si es un componente de un <b>producto compuesto</b>, éste se verá afectado.</li>
+                <li>Los registros de <b>ventas antiguas</b> mostrarán el nombre pero ya no estarán vinculados a este SKU.</li>
+              </ul>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={isDeleting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Eliminando..." : "Sí, eliminar producto"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }

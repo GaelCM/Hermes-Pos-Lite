@@ -1,6 +1,6 @@
 
 import { obtenerCategoriasApi } from "@/api/categoriasApi/categoriasApi";
-import { getProductos, insertarProductoEspecialApi } from "@/api/productosApi/productosApi";
+import { getProductosInventario, insertarProductoEspecialApi } from "@/api/productosApi/productosApi";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { Categoria } from "@/types/Categoria";
-import type { Producto } from "@/types/Producto";
+import type { ProductoVenta } from "@/types/Producto";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Package, Search, Trash2 } from "lucide-react";
@@ -19,16 +19,17 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { z } from "zod";
+import { redondearCantidad } from "@/lib/utils";
 
 const formSchema = z.object({
-  id_sucur: z.number().positive(),
-  isEspecial: z.number().positive(),
+  id_sucur: z.number(),
+  isEspecial: z.number(),
   sku_pieza: z.string().min(1, 'El código es requerido'),
   nombre_producto: z.string().min(1, 'El nombre del producto es requerido'),
   descripcion: z.string().optional(),
   id_categoria: z.string().min(1, 'La categoría es requerida'),
-  precio_venta: z.coerce.number().positive({ message: 'El precio de venta debe ser mayor a 0' }),
-  precio_mayoreo: z.coerce.number().positive({ message: 'El precio de mayoreo debe ser mayor a 0' }),
+  precio_venta: z.coerce.number().min(0, { message: 'El precio de venta debe ser mayor o igual a 0' }),
+  precio_mayoreo: z.coerce.number().min(0, { message: 'El precio de mayoreo debe ser mayor o igual a 0' }),
   componentes: z.array(
     z.object({
       id_unidad_venta: z.number(),
@@ -36,7 +37,8 @@ const formSchema = z.object({
       nombre_presentacion: z.string(),
       cantidad: z.number().positive('La cantidad debe ser mayor a 0'),
       precio_unitario: z.number(),
-      stock_disponible: z.number()
+      stock_disponible: z.number(),
+      es_granel: z.boolean().optional()
     })
   ).min(1, 'Debes agregar al menos un componente al paquete')
 });
@@ -50,10 +52,11 @@ type FormValues = z.infer<typeof formSchema>;
 export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursal: number }) {
 
   const navigate = useNavigate();
-  const [productosDisponibles, setProductosDisponibles] = useState<Producto[]>([]);
+  const [productosDisponibles, setProductosDisponibles] = useState<ProductoVenta[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   useEffect(() => {
     obtenerCategoriasApi().then(res => {
@@ -90,6 +93,33 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
     );
   });
 
+  // Reset selectedIndex when filter changes
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [searchTerm]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showSearchResults || productosFiltrados.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev + 1) % productosFiltrados.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev - 1 + productosFiltrados.length) % productosFiltrados.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      agregarComponente(productosFiltrados[selectedIndex]);
+    }
+  };
+
+  useEffect(() => {
+    const activeElement = document.querySelector(`[data-product-index="${selectedIndex}"]`);
+    if (activeElement) {
+      activeElement.scrollIntoView({ block: 'nearest' });
+    }
+  }, [selectedIndex]);
+
   const agregarComponente = (producto: typeof productosDisponibles[0]) => {
     const yaExiste = componentes.find(c => c.id_unidad_venta === producto.id_unidad_venta);
     if (yaExiste) {
@@ -104,8 +134,9 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
         nombre_producto: producto.nombre_producto,
         nombre_presentacion: producto.nombre_presentacion,
         cantidad: 1,
-        precio_unitario: producto.precio_venta,
-        stock_disponible: producto.stock_disponible_presentacion
+        precio_unitario: producto.precio_venta ?? 0,
+        stock_disponible: producto.stock_disponible_presentacion ?? 0,
+        es_granel: producto.es_granel
       }
     ]);
 
@@ -127,7 +158,7 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
   };
 
   useEffect(() => {
-    getProductos(id_sucursal).then(res => {
+    getProductosInventario(id_sucursal).then(res => {
       if (res.success) {
         setProductosDisponibles(res.data);
       } else {
@@ -161,7 +192,13 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
         <CardContent>
           {/* ---------------------- FORMULARIO ÚNICO ---------------------- */}
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10">
+            <form
+              onSubmit={form.handleSubmit(onSubmit, (errors) => {
+                console.log("ERRORES VALIDACION:", errors);
+                toast.error("Por favor completa los campos requeridos");
+              })}
+              className="space-y-10"
+            >
 
               {/* GRID PRINCIPAL DE DOS COLUMNAS */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -315,9 +352,9 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
                               <Input
                                 type="number"
                                 step="0.01"
-                                value={field.value}
+                                value={field.value ?? ""}
                                 onChange={(e) =>
-                                  field.onChange(parseFloat(e.target.value))
+                                  field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))
                                 }
                                 placeholder="Ej: 150.00"
                               />
@@ -356,9 +393,9 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
                               <Input
                                 type="number"
                                 step="0.01"
-                                value={field.value}
+                                value={field.value ?? ""}
                                 onChange={(e) =>
-                                  field.onChange(parseFloat(e.target.value))
+                                  field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))
                                 }
                                 placeholder="Ej: 150.00"
                               />
@@ -421,27 +458,47 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
                               setShowSearchResults(e.target.value.length > 0);
                             }}
                             onFocus={() => setShowSearchResults(searchTerm.length > 0)}
+                            onKeyDown={handleKeyDown}
                             className="pl-10"
                           />
                         </div>
 
                         {showSearchResults && productosFiltrados.length > 0 && (
-                          <Card className="absolute z-10 w-full mt-2 max-h-60 overflow-y-auto">
+                          <Card className="absolute z-10 w-full mt-2 max-h-60 overflow-y-auto shadow-xl border-2 border-blue-100">
                             <CardContent className="p-0">
-                              {productosFiltrados.map((producto) => (
+                              {productosFiltrados.map((producto, index) => (
                                 <div
                                   key={producto.id_unidad_venta}
-                                  className="p-3 hover:bg-gray-50 cursor-pointer border-b last:border-0"
+                                  data-product-index={index}
+                                  className={`p-3 cursor-pointer border-b last:border-0 transition-colors ${index === selectedIndex ? "bg-blue-300" : "hover:bg-blue-50"
+                                    }`}
                                   onClick={() => agregarComponente(producto)}
                                 >
                                   <div className="flex justify-between items-center">
-                                    <div>
-                                      <p className="font-medium">{producto.nombre_producto}</p>
-                                      <p className="text-sm text-gray-500">{producto.nombre_presentacion}</p>
+                                    <div className="flex flex-col gap-1">
+                                      <div className="flex items-center gap-2">
+                                        <p className="font-medium text-gray-900">{producto.nombre_producto}</p>
+                                        <span className={`
+                                          ${producto.es_producto_compuesto === 1
+                                            ? 'bg-purple-100 text-purple-700'
+                                            : producto.factor_conversion_cantidad === 1
+                                              ? 'bg-blue-100 text-blue-700'
+                                              : 'bg-amber-100 text-amber-700'} 
+                                          text-[10px] px-2 py-0.5 rounded-full font-bold uppercase`}>
+                                          {producto.nombre_presentacion}
+                                        </span>
+                                      </div>
                                     </div>
                                     <div className="text-right">
-                                      <p className="font-medium">${producto.precio_venta.toFixed(2)}</p>
-                                      <p className="text-xs text-gray-500">Stock: {producto.stock_disponible_presentacion}</p>
+                                      <p className="font-bold text-sm text-green-700">
+                                        {producto.precio_venta > 0
+                                          ? `$${producto.precio_venta.toFixed(2)}`
+                                          : <span className="text-orange-500 text-[10px]">Sólo Inventario</span>
+                                        }
+                                      </p>
+                                      <p className={`text-[11px] font-medium ${producto.stock_disponible_presentacion > 0 ? 'text-gray-600' : 'text-red-500'}`}>
+                                        Stock: {producto.stock_disponible_presentacion}
+                                      </p>
                                     </div>
                                   </div>
                                 </div>
@@ -485,7 +542,9 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
                                             max={comp.stock_disponible}
                                             value={field.value}
                                             onChange={(e) =>
-                                              field.onChange(parseInt(e.target.value) || 1)
+                                              field.onChange(
+                                                redondearCantidad(parseFloat(e.target.value) || 0, comp.es_granel || false)
+                                              )
                                             }
                                           />
                                         </FormControl>
@@ -533,7 +592,7 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
 
               {/* BOTÓN FINAL */}
               <Button type="submit" className="w-full bg-green-600 hover:bg-green-700">
-                Crear Paquete
+                Crear Paquetes
               </Button>
 
             </form>

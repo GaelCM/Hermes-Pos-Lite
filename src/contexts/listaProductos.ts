@@ -7,6 +7,8 @@ import type { ProductoItem, ProductoVenta } from "@/types/Producto";
 import type { Cliente } from "@/types/Cliente";
 import { create } from "zustand"
 import { createJSONStorage, persist } from "zustand/middleware"
+import { redondearCantidad } from "@/lib/utils";
+
 
 export type Carrito = {
     id: string;
@@ -27,6 +29,7 @@ type ListaProductosModel = {
     eliminarCarrito: (id: string) => void;
     renombrarCarrito: (id: string, nuevoNombre: string) => void;
     asignarClienteCarrito: (id: string, cliente: Cliente) => void;
+    desasignarClienteCarrito: (id: string) => void;
 
     // ACCIONES DEL CARRITO ACTIVO
     addProduct: (product: ProductoVenta, quantity?: number) => void;
@@ -135,6 +138,18 @@ export const useListaProductos = create(
                 console.log("Cliente asignado al carrito:", id);
             },
 
+            /**
+             * Quita el cliente de un carrito específico
+             */
+            desasignarClienteCarrito: (id: string) => {
+                const currentCarritos = get().carritos;
+                const updated = currentCarritos.map(c =>
+                    c.id === id ? { ...c, cliente: undefined } : c
+                );
+                set({ carritos: updated });
+                console.log("Cliente quitado del carrito:", id);
+            },
+
             // --- ACCIONES DEL CARRITO ACTIVO ---
 
             /**
@@ -158,7 +173,7 @@ export const useListaProductos = create(
                             // Ya existe → solo incrementar cantidad
                             const updatedProductos = carrito.productos.map((item, index) =>
                                 index === existingItemIndex
-                                    ? { ...item, quantity: item.quantity + quantity }
+                                    ? { ...item, quantity: redondearCantidad(item.quantity + quantity, item.product.es_granel) }
                                     : item
                             );
                             return { ...carrito, productos: updatedProductos };
@@ -168,7 +183,7 @@ export const useListaProductos = create(
                                 ...carrito,
                                 productos: [
                                     ...carrito.productos,
-                                    { product, quantity: quantity, usarPrecioMayoreo: false }
+                                    { product, quantity: redondearCantidad(quantity, product.es_granel), usarPrecioMayoreo: false }
                                 ],
                             };
                         }
@@ -227,7 +242,7 @@ export const useListaProductos = create(
                                 ...carrito,
                                 productos: carrito.productos.map((item) =>
                                     item.product.id_unidad_venta === id_producto
-                                        ? { ...item, quantity: newQuantity }
+                                        ? { ...item, quantity: redondearCantidad(newQuantity, item.product.es_granel) }
                                         : item
                                 ),
                             };
@@ -253,7 +268,7 @@ export const useListaProductos = create(
                             ...carrito,
                             productos: carrito.productos.map((item) =>
                                 item.product.id_unidad_venta === id_producto
-                                    ? { ...item, quantity: item.quantity + 1 }
+                                    ? { ...item, quantity: redondearCantidad(item.quantity + 1, item.product.es_granel) }
                                     : item
                             ),
                         };
@@ -335,15 +350,16 @@ export const useListaProductos = create(
             },
 
             /**
-             * Obtiene el precio total del carrito activo
+             * Obtiene el precio total exacto del carrito activo sin redondear
              */
             getTotalPrice: () => {
                 const carritoActivo = get().getCarritoActivo();
                 if (!carritoActivo) return 0;
                 return carritoActivo.productos.reduce(
                     (total, item) => {
-                        const precio = item.usarPrecioMayoreo ? item.product.precio_mayoreo : item.product.precio_venta;
-                        return total + (precio * item.quantity);
+                        const precioArr = item.usarPrecioMayoreo ? item.product.precio_mayoreo : item.product.precio_venta;
+                        const subtotalExacto = precioArr * item.quantity;
+                        return total + subtotalExacto;
                     },
                     0
                 );

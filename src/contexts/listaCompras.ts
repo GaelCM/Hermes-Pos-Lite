@@ -2,6 +2,7 @@
 import type { ProductoItem, ProductoVenta } from "@/types/Producto";
 import { create } from "zustand"
 import { createJSONStorage, persist } from "zustand/middleware"
+import { redondearCantidad } from "@/lib/utils";
 
 export type CarritoCompra = {
     id: string;
@@ -104,20 +105,23 @@ export const useListaCompras = create(
                         if (existingItemIndex > -1) {
                             const updatedProductos = carrito.productos.map((item, index) =>
                                 index === existingItemIndex
-                                    ? { ...item, quantity: item.quantity + quantity }
+                                    ? { ...item, quantity: redondearCantidad(item.quantity + quantity, item.product.es_granel) }
                                     : item
                             );
                             return { ...carrito, productos: updatedProductos };
                         } else {
+                            // Calcular el precio de compra según la presentación
+                            const precioPorPresentacion = product.precio_costo * (product.factor_conversion_cantidad || 1);
+
                             return {
                                 ...carrito,
                                 productos: [
                                     ...carrito.productos,
                                     {
                                         product,
-                                        quantity: quantity,
+                                        quantity: redondearCantidad(quantity, product.es_granel),
                                         usarPrecioMayoreo: false,
-                                        precio_compra: product.precio_costo
+                                        precio_compra: precioPorPresentacion
                                     }
                                 ],
                             };
@@ -155,23 +159,14 @@ export const useListaCompras = create(
                 const currentCarritos = get().carritos;
                 const updated = currentCarritos.map(carrito => {
                     if (carrito.id === activeId) {
-                        if (newQuantity < 1) {
-                            return {
-                                ...carrito,
-                                productos: carrito.productos.filter(
-                                    (item) => item.product.id_unidad_venta !== id_unidad_venta
-                                ),
-                            };
-                        } else {
-                            return {
-                                ...carrito,
-                                productos: carrito.productos.map((item) =>
-                                    item.product.id_unidad_venta === id_unidad_venta
-                                        ? { ...item, quantity: newQuantity }
-                                        : item
-                                ),
-                            };
-                        }
+                        return {
+                            ...carrito,
+                            productos: carrito.productos.map((item) =>
+                                item.product.id_unidad_venta === id_unidad_venta
+                                    ? { ...item, quantity: redondearCantidad(newQuantity, item.product.es_granel) }
+                                    : item
+                            ),
+                        };
                     }
                     return carrito;
                 });
@@ -212,7 +207,7 @@ export const useListaCompras = create(
                             ...carrito,
                             productos: carrito.productos.map((item) =>
                                 item.product.id_unidad_venta === id_unidad_venta
-                                    ? { ...item, quantity: item.quantity + 1 }
+                                    ? { ...item, quantity: redondearCantidad(item.quantity + 1, item.product.es_granel) }
                                     : item
                             ),
                         };
@@ -236,11 +231,7 @@ export const useListaCompras = create(
                 );
 
                 if (itemToDecrement) {
-                    if (itemToDecrement.quantity > 1) {
-                        get().updateQuantity(id_unidad_venta, itemToDecrement.quantity - 1);
-                    } else {
-                        get().removeProduct(id_unidad_venta);
-                    }
+                    get().updateQuantity(id_unidad_venta, itemToDecrement.quantity - 1);
                 }
             },
 

@@ -4,7 +4,7 @@ import { actualizarProductoApi, obtenerProductoGeneral } from "@/api/productosAp
 import { obtenerSucursalesApi } from "@/api/sucursalApi/sucursalApi";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,9 @@ import { useForm } from "react-hook-form";
 import { useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { z } from "zod";
+import "./editarProducto.css";
 import { redondearCantidad } from "@/lib/utils";
+import "@/AeroPremium.css";
 
 
 const formSchema = z.object({
@@ -141,13 +143,7 @@ export default function EditarProductoForm() {
     cargarProducto();
   }, [id_producto, form.reset]);
 
-  // Sincronizar SKU de la pieza base con la primera variante
-  const skuPieza = watch("sku_pieza");
-  useEffect(() => {
-    if (variantes.length > 0 && variantes[0].sku_presentacion !== skuPieza) {
-      form.setValue("variantes.0.sku_presentacion", skuPieza);
-    }
-  }, [skuPieza, form, variantes.length]);
+
 
 
   const onSubmit = async (values: FormValues) => {
@@ -190,6 +186,24 @@ export default function EditarProductoForm() {
       valid = (await Promise.all(promises)).every(r => r);
     }
     else if (currentStep === 3) {
+      // Step 3 = Precios: validar precios de venta por sucursal
+      const fieldsToValidate: any[] = [];
+      variantes.forEach((v, vIdx) => {
+        v.sucursales_venta.forEach((_, svIdx) => {
+          fieldsToValidate.push(`variantes.${vIdx}.sucursales_venta.${svIdx}.precio_venta`);
+          fieldsToValidate.push(`variantes.${vIdx}.sucursales_venta.${svIdx}.precio_mayoreo`);
+        });
+      });
+
+      if (fieldsToValidate.length === 0) {
+        toast.error("Debes asignar al menos una sucursal de venta a una presentación.");
+        valid = false;
+      } else {
+        valid = await form.trigger(fieldsToValidate);
+      }
+    }
+    else if (currentStep === 4) {
+      // Step 4 = Stock: validar inventario
       valid = await form.trigger(["sucursales_inventario"]);
     }
 
@@ -323,115 +337,122 @@ export default function EditarProductoForm() {
 
   /* ----------------------- STEP 1 --------------------------- */
   const renderStep1 = () => (
-    <div className="space-y-4">
-      <FormField
-        control={form.control}
-        name="nombre_producto"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Nombre *</FormLabel>
-            <FormControl>
-              <Input {...field} placeholder="Nombre del producto" onFocus={(e) => e.target.select()} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="descripcion"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Descripción</FormLabel>
-            <FormControl>
-              <Textarea {...field} rows={3} value={field.value || ''} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <div className="grid grid-cols-2 gap-4">
-        <FormField
-          control={form.control}
-          name="id_categoria"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Categoría *</FormLabel>
-              <Select value={field.value} onValueChange={field.onChange}>
+    <div className="space-y-6 animate-aero">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <FormField
+            control={form.control}
+            name="nombre_producto"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="font-black text-black">Nombre del Producto *</FormLabel>
                 <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar" />
-                  </SelectTrigger>
+                  <Input {...field} className="aero-input h-11 text-lg font-black text-black" placeholder="Ej: Sabritas Original 45g" onFocus={(e) => e.target.select()} />
                 </FormControl>
-                <SelectContent>
-                  {categorias.map(cat => (
-                    <SelectItem
-                      key={cat.id_categoria}
-                      value={String(cat.id_categoria)}
-                    >
-                      {cat.category_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="precio_costo"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Precio Costo *</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={field.value ?? ""}
-                  onFocus={(e) => e.target.select()}
-                  onChange={(e) => field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="id_categoria"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="font-black text-black">Categoría *</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger className="aero-input h-11 font-black text-black">
+                      <SelectValue placeholder="Seleccionar categoría" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent className="aero-glass">
+                    {categorias.map(cat => (
+                      <SelectItem key={cat.id_categoria} value={String(cat.id_categoria)} className="font-black text-black">
+                        {cat.category_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="sku_pieza"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="font-black text-black">SKU Base (Pieza) *</FormLabel>
+                <FormControl>
+                  <Input {...field} className="aero-input h-11 font-mono font-black text-black" placeholder="Escanear código..." onFocus={(e) => e.target.select()} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="space-y-4">
+          <FormField
+            control={form.control}
+            name="precio_costo"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="font-black text-black">Precio Costo ($) *</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-black font-black">$</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      className="aero-input h-11 pl-8 text-xl font-black text-black"
+                      value={field.value ?? ""}
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))}
+                    />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="descripcion"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="font-black text-black">Descripción</FormLabel>
+                <FormControl>
+                  <Textarea {...field} className="aero-input min-h-[110px] font-black text-black" rows={3} value={field.value || ''} placeholder="Descripción opcional del producto..." />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
       </div>
 
       <FormField
         control={form.control}
-        name="sku_pieza"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>SKU Pieza *</FormLabel>
-            <FormControl>
-              <Input {...field} onFocus={(e) => e.target.select()} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={form.control}
         name="es_granel"
         render={({ field }) => (
-          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-xl p-4 aero-glass border-2 border-black hover:border-black transition-colors">
             <FormControl>
               <Checkbox
                 checked={field.value}
                 onCheckedChange={field.onChange}
+                className="w-5 h-5 border-black data-[state=checked]:bg-black"
               />
             </FormControl>
             <div className="space-y-1 leading-none">
-              <FormLabel>
-                ¿Este producto se vende a Granel?
+              <FormLabel className="font-black text-black text-base">
+                ¿Venta a Granel?
               </FormLabel>
-              <CardDescription>
-                Este producto se vende por peso/medida (kg, litros, etc.)
+              <CardDescription className="font-black text-black">
+                Activa si el producto se vende por peso, litros o medida (kg, m, l).
               </CardDescription>
             </div>
           </FormItem>
@@ -442,110 +463,124 @@ export default function EditarProductoForm() {
 
   /* ----------------------- STEP 2 (DEFINIR VARIANTES) --------------------------- */
   const renderStep2 = () => (
-    <div className="space-y-4">
-      <Alert className="bg-orange-50 border-orange-200">
-        <AlertTitle className="text-lg font-bold text-orange-800 flex items-center gap-2">
-          📦 Definición de Paquetes y Piezas
+    <div className="space-y-6 animate-aero">
+      <Alert className="aero-glass border-black bg-white/50 backdrop-blur-md">
+        <AlertTitle className="text-lg font-black text-black flex items-center gap-2 uppercase tracking-tight">
+          📦 Gestión de Paquetes
         </AlertTitle>
-        <AlertDescription className="text-orange-700 font-medium">
-          Define cómo se vende este producto (Cajas, Six-packs, etc.).
-          Esto permitirá que en el siguiente paso ajustes el inventario usando estas unidades físicamente.
+        <AlertDescription className="text-black font-black italic">
+          Configura cómo se vende este producto (Cajas, Six-packs, etc.).
+          Esto activará el cálculo automático de inventario para tus sucursales.
         </AlertDescription>
       </Alert>
 
-      {variantes.map((_, index) => (
-        <Card key={index} className="relative shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="pt-6 space-y-4">
-            {index > 0 && (
-              <Button
-                variant="ghost"
-                className="absolute top-2 right-2 text-red-400 hover:text-red-600 hover:bg-red-50"
-                size="icon"
-                type="button"
-                onClick={() => removeVariante(index)}
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            )}
+      <div className="grid gap-4">
+        {variantes.map((_, index) => (
+          <Card key={index} className="aero-card aero-glass border-2 border-black relative group">
+            <CardContent className="pt-8 space-y-6">
+              {index > 0 && (
+                <Button
+                  variant="ghost"
+                  className="absolute top-2 right-2 text-black hover:text-black hover:bg-gray-200 rounded-full transition-all"
+                  size="sm"
+                  type="button"
+                  onClick={() => removeVariante(index)}
+                >
+                  <Trash2 className="w-4 h-4 mr-1" /> Eliminar
+                </Button>
+              )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name={`variantes.${index}.nombre_presentacion`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] font-black uppercase text-black tracking-widest">Nombre del Paquete *</FormLabel>
+                      <FormControl>
+                        <Input {...field} disabled={index === 0} placeholder="Ej: Caja 24 piezas" className="aero-input h-10 font-black text-black border-2 border-black" onFocus={(e) => e.target.select()} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name={`variantes.${index}.factor_conversion_cantidad`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] font-black uppercase text-black tracking-widest">Contenido (unidades) *</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            className="aero-input h-10 font-black text-black border-2 border-black"
+                            value={field.value}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))}
+                            disabled={index === 0}
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-black font-black uppercase">Piezas</span>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <FormField
                 control={form.control}
-                name={`variantes.${index}.nombre_presentacion`}
+                name={`variantes.${index}.sku_presentacion`}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase text-slate-500">Nombre Presentación *</FormLabel>
-                    <FormControl>
-                      <Input {...field} disabled={index === 0} placeholder="Ej: Caja 24 pzas" onFocus={(e) => e.target.select()} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name={`variantes.${index}.factor_conversion_cantidad`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase text-slate-500">¿Cuántas piezas contiene? *</FormLabel>
+                    <FormLabel className="text-[10px] font-black uppercase text-black tracking-widest">Código de Barras del Paquete *</FormLabel>
                     <FormControl>
                       <div className="relative">
+                        <Package className="absolute left-3 top-1/2 -translate-y-1/2 text-black w-4 h-4" />
                         <Input
-                          type="number"
-                          className="font-bold"
-                          value={field.value}
+                          {...field}
+                          className="aero-input h-10 pl-10 font-mono font-black text-black border-2 border-black"
+                          placeholder="Escanea el SKU del paquete..."
                           onFocus={(e) => e.target.select()}
-                          onChange={(e) => field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))}
-                          disabled={index === 0}
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">piezas</span>
                       </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-            <FormField
-              control={form.control}
-              name={`variantes.${index}.sku_presentacion`}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs font-bold uppercase text-slate-500">SKU Presentación *</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      disabled={index === 0}
-                      placeholder={index === 0 ? "Se hereda del SKU de pieza" : "Escanea el código del paquete"}
-                      onFocus={(e) => e.target.select()}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
-      ))}
-
-      <Button type="button" variant="outline" onClick={addVariante} className="w-full border-dashed border-2 py-8 hover:bg-slate-50 text-slate-500 transition-all">
-        <Plus className="w-5 h-5 mr-3" /> Agregar Nueva Presentación (Paquete, Caja, etc.)
+      <Button
+        type="button"
+        variant="outline"
+        onClick={addVariante}
+        className="w-full border-dashed border-2 py-10 aero-glass border-black hover:border-black hover:bg-gray-100/50 text-black rounded-2xl transition-all group"
+      >
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <Plus className="w-6 h-6" />
+          </div>
+          <span className="font-black uppercase text-xs tracking-widest line-clamp-1 text-black">Nuevo Paquete / Presentación</span>
+        </div>
       </Button>
     </div>
   );
 
   /* ----------------------- STEP 3 (INVENTARIO POR PRESENTACIÓN) --------------------------- */
   const renderStep3 = () => (
-    <div className="space-y-6">
-      <Alert className="bg-blue-50 border-blue-200">
-        <AlertTitle className="text-lg font-bold text-blue-800 flex items-center gap-2">
-          <Package className="w-5 h-5" /> Ajuste de Stock Inteligente
+    <div className="space-y-6 animate-aero">
+      <Alert className="aero-glass border-black bg-white/50">
+        <AlertTitle className="text-lg font-black text-black flex items-center gap-2 uppercase tracking-tight">
+          <Package className="w-5 h-5" /> Stock por Sucursal
         </AlertTitle>
-        <AlertDescription className="text-blue-700 font-medium">
-          Indica cuánto estás agregando (+) o quitando (-) de cada presentación.
-          El sistema calculará automáticamente el total de piezas físicas.
+        <AlertDescription className="text-black font-black italic">
+          Ajusta las cantidades físicas sumando (+) o restando (-) paquetes. El sistema hará las cuentas por ti.
         </AlertDescription>
       </Alert>
 
@@ -553,93 +588,87 @@ export default function EditarProductoForm() {
         control={form.control}
         name="sucursales_inventario"
         render={({ field }) => (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {sucursales.map(s => {
               const invIndex = (field.value || []).findIndex((si: any) => si.id_sucursal === s.id_sucursal);
               const selected = invIndex !== -1;
 
               return (
-                <Card key={s.id_sucursal} className={`border-2 transition-all duration-300 ${selected ? 'border-primary shadow-lg bg-white scale-[1.02]' : 'border-dashed border-gray-200 bg-gray-50/50'}`}>
-                  {/* Header */}
+                <Card key={s.id_sucursal} className={`aero-card border-2 transition-all duration-300 ${selected ? 'border-black aero-glass scale-[1.03] shadow-2xl' : 'border-dashed border-black bg-white/30'}`}>
+                  {/* Header Sucursal */}
                   <div
-                    className={`p-3 flex items-center justify-between cursor-pointer ${selected ? 'bg-primary/5 border-b border-primary/10' : ''}`}
+                    className={`p-4 flex items-center justify-between cursor-pointer transition-colors ${selected ? 'bg-black text-white rounded-t-lg' : 'hover:bg-gray-200/50'}`}
                     onClick={() => toggleSucursalInventario(s.id_sucursal)}
                   >
-                    <div className="flex items-center gap-2">
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selected ? 'bg-primary border-primary' : 'bg-white border-slate-300'}`}>
-                        {selected && <Check className="w-3 h-3 text-white font-bold" />}
+                    <div className="flex items-center gap-3">
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selected ? 'bg-white border-white text-black' : 'bg-white border-black text-black'}`}>
+                        {selected && <Check className="w-4 h-4 text-black font-black" />}
                       </div>
-                      <span className={`font-bold ${selected ? 'text-primary uppercase tracking-tight' : 'text-gray-500'}`}>{s.nombre}</span>
+                      <span className={`font-black uppercase tracking-tight ${selected ? 'text-white' : 'text-black'}`}>{s.nombre}</span>
                     </div>
-                    {!selected && <Plus className="w-4 h-4 text-gray-400" />}
+                    {!selected && <Plus className="w-5 h-5 text-black" />}
                   </div>
 
                   {selected && (
-                    <CardContent className="p-4 space-y-4 animate-in slide-in-from-top-2">
-                      <div className="grid grid-cols-2 gap-2 bg-gray-200 text-slate-500 p-2 rounded-lg text-center">
-                        <div className="border-r border-slate-700">
-                          <p className="text-[9px] uppercase font-bold opacity-60">Stock Actual</p>
-                          <p className="text-lg font-black">{initialQuantities[s.id_sucursal] || 0}</p>
+                    <CardContent className="p-5 space-y-6 animate-aero">
+                      <div className="grid grid-cols-2 gap-4 bg-white border-2 border-black text-black p-4 rounded-2xl shadow-inner">
+                        <div className="text-center border-r border-black">
+                          <p className="text-[8px] uppercase font-black text-black tracking-widest mb-1">Stock Actual</p>
+                          <p className="text-2xl font-black">{initialQuantities[s.id_sucursal] || 0}</p>
                         </div>
-                        <div>
-                          <p className="text-[9px] uppercase font-bold opacity-60">Stock Final</p>
-                          <p className="text-lg font-black text-green-400">
+                        <div className="text-center">
+                          <p className="text-[8px] uppercase font-black text-black tracking-widest mb-1">Stock Final</p>
+                          <p className="text-2xl font-black text-black">
                             {form.watch(`sucursales_inventario.${invIndex}.cantidad_actual`)}
                           </p>
                         </div>
                       </div>
 
-                      <div className="space-y-3">
-                        <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Surtir / Ajustar</Label>
+                      <div className="space-y-4">
+                        <Label className="text-[10px] font-black text-black uppercase tracking-[0.2em] block mb-2">Entradas / Salidas</Label>
                         <div className="space-y-2">
                           {variantes.map((v, vIdx) => {
-                            // Verificar si está habilitada en esta sucursal en el paso de precios
                             const isEnabledInBranch = v.sucursales_venta.some(sv => sv.id_sucursal === s.id_sucursal);
-
-                            // Regla: Mostrar si está a la venta O si es factor 1 (pieza) para ajustes físicos de merma
                             if (v.factor_conversion_cantidad !== 1 && !isEnabledInBranch) return null;
 
                             return (
-                              <div key={vIdx} className="flex items-center gap-2 group p-2 rounded-md hover:bg-slate-50 transition-colors">
+                              <div key={vIdx} className="flex items-center gap-3 p-3 rounded-xl bg-white/50 border-2 border-black transition-all group">
                                 <div className="flex-1">
-                                  <p className="text-md font-bold text-slate-700 leading-none">
+                                  <p className="text-sm font-black text-black leading-tight uppercase tracking-tight">
                                     {v.nombre_presentacion || "Sin nombre"}
-                                    {!isEnabledInBranch && (
-                                      <span className="ml-2 text-[8px] bg-amber-100 text-amber-700 px-1 rounded uppercase font-black">Sólo Ajuste Físico</span>
-                                    )}
                                   </p>
-                                  <p className="text-[9px] text-slate-400 font-medium">Contiene {v.factor_conversion_cantidad} pzas</p>
+                                  <p className="text-[9px] text-black font-black uppercase">× {v.factor_conversion_cantidad} pzas</p>
                                 </div>
-                                <div className="flex items-center">
-                                  <Input
-                                    type="number"
-                                    placeholder="+/- 0"
-                                    className="h-8 w-24 text-right font-bold text-sm bg-white border-red-600 focus:border-red-600"
-                                    value={adjustments[s.id_sucursal]?.[vIdx] ?? ""}
-                                    onFocus={(e) => e.target.select()}
-                                    onChange={(e) => {
-                                      const text = e.target.value;
-                                      const val = text === "" ? undefined : parseFloat(text);
-                                      handleVariantAdjustment(s.id_sucursal, vIdx, isNaN(val as number) ? undefined : val);
-                                    }}
-                                  />
-                                </div>
+                                <Input
+                                  type="number"
+                                  placeholder="+/-"
+                                  className="h-9 w-20 text-center font-black text-black border-2 border-black focus:border-black rounded-lg bg-white aero-input"
+                                  value={adjustments[s.id_sucursal]?.[vIdx] ?? ""}
+                                  onFocus={(e) => e.target.select()}
+                                  onChange={(e) => {
+                                    const val = e.target.value === "" ? undefined : parseFloat(e.target.value);
+                                    handleVariantAdjustment(s.id_sucursal, vIdx, isNaN(val as number) ? undefined : val);
+                                  }}
+                                />
                               </div>
                             );
                           })}
                         </div>
                       </div>
 
-                      <div className="pt-2 border-t">
+                      <div className="pt-4 border-t border-black">
                         <FormField
                           control={form.control}
                           name={`sucursales_inventario.${invIndex}.cantidad_minima`}
                           render={({ field: f }) => (
-                            <div className="flex items-center justify-between">
-                              <Label className="text-[10px] font-bold text-slate-500 uppercase">Aviso Stock Mínimo</Label>
+                            <div className="flex items-center justify-between border-2 border-black bg-white/50 p-3 rounded-xl">
+                              <div className="flex flex-col">
+                                <Label className="text-[10px] font-black text-black uppercase">Aviso Mínimo</Label>
+                                <span className="text-[8px] text-black font-black">Piezas en reserva</span>
+                              </div>
                               <Input
                                 type="number"
-                                className="h-7 w-20 text-center text-xs font-bold"
+                                className="h-8 w-16 text-center font-black text-black bg-white border-2 border-black"
                                 {...f}
                                 onFocus={(e) => e.target.select()}
                                 onChange={(e) => f.onChange(e.target.value)}
@@ -653,32 +682,14 @@ export default function EditarProductoForm() {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="w-full text-center py-1 mt-2 text-[10px] text-red-500 hover:text-red-600 hover:bg-red-50 font-bold uppercase tracking-tighter"
+                        className="w-full text-[10px] font-black text-black uppercase tracking-widest hover:bg-black hover:text-white transition-all rounded-lg border-2 border-black mt-2"
                         onClick={() => {
-                          // Resetear todos los campos de esta sucursal
-                          const currentBranchAdjustments = adjustments[s.id_sucursal] || {};
-                          const resetAdjusts: Record<number, number | undefined> = {};
-
-                          // Para que el stock sea 0, el ajuste total debe ser -(initialQuantities)
-                          // Lo aplicamos en la unidad base (índice 0)
                           const initial = initialQuantities[s.id_sucursal] || 0;
-
-                          // Limpiamos todos los ajustes previos
-                          Object.keys(currentBranchAdjustments).forEach(k => {
-                            resetAdjusts[parseInt(k)] = 0;
-                          });
-
-                          // Ponemos el negativo del inicial en la base
                           handleVariantAdjustment(s.id_sucursal, 0, -initial);
-
-                          // Sincronizar estado local de inputs
-                          setAdjustments({
-                            ...adjustments,
-                            [s.id_sucursal]: { "0": -initial }
-                          });
+                          setAdjustments({ ...adjustments, [s.id_sucursal]: { "0": -initial } });
                         }}
                       >
-                        Resetear Stock a 0
+                        BORRAR TODO EL STOCK
                       </Button>
                     </CardContent>
                   )}
@@ -693,61 +704,64 @@ export default function EditarProductoForm() {
 
   /* ----------------------- STEP 4 --------------------------- */
   const renderStep4 = () => (
-    <div className="space-y-8">
-      <Alert className="bg-green-50 border-green-200">
-        <AlertTitle className="text-lg font-bold text-green-800 flex items-center gap-2">
-          💲 Este producto se vende en
+    <div className="space-y-10 animate-aero">
+      <Alert className="aero-glass border-black bg-white/50">
+        <AlertTitle className="text-lg font-black text-black flex items-center gap-2 uppercase tracking-tight">
+          💰 Catálogo de Precios
         </AlertTitle>
-        <AlertDescription className="text-green-700 font-medium">
-          Define los precios de venta para cada presentación en las sucursales habilitadas.
+        <AlertDescription className="text-black font-black italic">
+          Configura los márgenes de ganancia por sucursal. Los cambios se reflejarán inmediatamente en caja.
         </AlertDescription>
       </Alert>
 
-      {variantes.map((v, vIndex) => (
-        <div key={vIndex} className="space-y-3">
-          <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-            <span className="bg-slate-800 text-white text-[10px] uppercase font-bold px-2 py-1 rounded">Presentación</span>
-            <h3 className="text-lg font-bold text-slate-800 uppercase tracking-tight">{v.nombre_presentacion || "Sin nombre"}</h3>
-          </div>
+      <div className="space-y-12">
+        {variantes.map((v, vIndex) => (
+          <div key={vIndex} className="space-y-6">
+            <div className="flex items-center gap-4 border-l-8 border-black pl-4 py-1">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase text-black tracking-[0.3em]">Presentación</span>
+                <h3 className="text-2xl font-black text-black uppercase italic tracking-tighter">
+                  {v.nombre_presentacion || "Sin nombre"}
+                </h3>
+              </div>
+            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {sucursales.map(suc => {
-              const svIndex = v.sucursales_venta.findIndex(sv => sv.id_sucursal === suc.id_sucursal);
-              const selected = svIndex !== -1;
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {sucursales.map(suc => {
+                const svIndex = v.sucursales_venta.findIndex(sv => sv.id_sucursal === suc.id_sucursal);
+                const selected = svIndex !== -1;
 
-              return (
-                <Card key={suc.id_sucursal} className={`border-2 transition-all duration-200 overflow-hidden ${selected ? 'border-primary shadow-md bg-white' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-100'}`}>
-
-                  <div
-                    className={`p-3 flex items-center justify-between cursor-pointer transition-colors ${selected ? 'bg-green-50 border-b border-green-100' : ''}`}
-                    onClick={() => toggleSucursalVenta(vIndex, suc.id_sucursal)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selected ? 'bg-green-600 border-green-600' : 'bg-white border-slate-300'}`}>
-                        {selected && <Check className="w-3 h-3 text-white font-bold" />}
+                return (
+                  <Card key={suc.id_sucursal} className={`aero-card border-none transition-all duration-300 overflow-hidden ${selected ? 'aero-glass scale-[1.03] shadow-2xl ring-2 ring-black' : 'bg-white/30 border-2 border-black'}`}>
+                    <div
+                      className={`p-4 flex items-center justify-between cursor-pointer transition-all ${selected ? 'bg-black text-white' : 'hover:bg-gray-200/50'}`}
+                      onClick={() => toggleSucursalVenta(vIndex, suc.id_sucursal)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selected ? 'bg-white border-white' : 'bg-white border-black'}`}>
+                          {selected && <Check className="w-4 h-4 text-black font-black" />}
+                        </div>
+                        <span className={`font-black uppercase tracking-tight ${selected ? 'text-white' : 'text-black'}`}>
+                          {suc.nombre}
+                        </span>
                       </div>
-                      <span className={`text-sm font-bold ${selected ? 'text-green-900' : 'text-slate-400'}`}>
-                        {suc.nombre}
-                      </span>
                     </div>
-                  </div>
 
-                  {selected && (
-                    <CardContent className="p-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                      <div className="space-y-3">
+                    {selected && (
+                      <CardContent className="p-5 space-y-5 animate-aero border-x-2 border-b-2 border-black rounded-b-xl">
                         <FormField
                           control={form.control}
                           name={`variantes.${vIndex}.sucursales_venta.${svIndex}.precio_venta`}
                           render={({ field }) => (
-                            <FormItem className="space-y-1">
-                              <FormLabel className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Precio Público ($)</FormLabel>
+                            <FormItem>
+                              <FormLabel className="text-[9px] font-black text-black uppercase tracking-widest pl-1">Precio Unitario ($)</FormLabel>
                               <FormControl>
-                                <div className="relative">
-                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
+                                <div className="relative group">
+                                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-black font-black text-xl">$</span>
                                   <Input
                                     type="number"
                                     step="0.01"
-                                    className="pl-7 text-xl font-bold h-10 border-green-100 focus:border-green-500"
+                                    className="aero-input h-14 pl-10 text-3xl font-black text-black border-2 border-black shadow-inner"
                                     value={field.value}
                                     onFocus={(e) => e.target.select()}
                                     onChange={(e) => field.onChange(e.target.value)}
@@ -762,15 +776,15 @@ export default function EditarProductoForm() {
                           control={form.control}
                           name={`variantes.${vIndex}.sucursales_venta.${svIndex}.precio_mayoreo`}
                           render={({ field }) => (
-                            <FormItem className="space-y-1">
-                              <FormLabel className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Precio Mayoreo ($)</FormLabel>
+                            <FormItem>
+                              <FormLabel className="text-[9px] font-black text-black uppercase tracking-widest pl-1">Precio Mayoreo ($)</FormLabel>
                               <FormControl>
                                 <div className="relative">
-                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
+                                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-black font-black text-lg">$</span>
                                   <Input
                                     type="number"
                                     step="0.01"
-                                    className="pl-7 text-lg font-bold h-9 border-dashed border-slate-200"
+                                    className="aero-input h-12 pl-9 text-xl font-black text-black border-2 border-black bg-white/50"
                                     value={field.value}
                                     onFocus={(e) => e.target.select()}
                                     onChange={(e) => field.onChange(e.target.value)}
@@ -780,124 +794,131 @@ export default function EditarProductoForm() {
                             </FormItem>
                           )}
                         />
-                      </div>
-                    </CardContent>
-                  )}
-                </Card>
-              );
-            })}
+                      </CardContent>
+                    )}
+                  </Card>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 
 
   if (loading) {
     return (
-      <div className="p-6 flex flex-col items-center justify-center min-h-screen space-y-4">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
-        <p className="text-slate-500 font-medium animate-pulse">Cargando datos del producto...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-purple-100 p-6">
+        <Card className="aero-glass w-full max-w-sm p-8 flex flex-col items-center space-y-6 shadow-2xl border-2 border-white/50">
+          <div className="relative">
+            <Loader2 className="w-16 h-16 animate-spin text-blue-600" />
+            <Package className="w-8 h-8 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-blue-400" />
+          </div>
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl font-black text-gray-800 uppercase tracking-tight italic">Hermes POS</h2>
+            <p className="text-gray-500 font-bold animate-pulse uppercase text-[10px] tracking-widest">Cargando catálogo maestro...</p>
+          </div>
+        </Card>
       </div>
     );
   }
 
+  const steps = [
+    { title: "Básico", icon: "📝" },
+    { title: "Paquetes", icon: "📦" },
+    { title: "Precios", icon: "💰" },
+    { title: "Stock", icon: "🏢" }
+  ];
 
   return (
-    <div className="p-6">
-      <Card className="border-none shadow-xl overflow-hidden">
-        <div className="h-2 bg-primary w-full" />
-        <CardHeader className="bg-white border-b border-slate-100">
-          <div className="w-full flex justify-between items-center mb-4">
-            <Button onClick={() => window.history.back()} variant="outline" className="text-white bg-primary hover:text-white hover:bg-primary/80 cursor-pointer transition-colors">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Regresar
+    <div className="ep-wrapper" data-step={currentStep}>
+      <div className="ep-header">
+        <div>
+          <h1 className="ep-title">
+            <Button variant="ghost" size="icon" onClick={() => window.history.back()} className="mr-4 -mt-2">
+              <ArrowLeft className="w-8 h-8 text-black" />
             </Button>
-            <div className="flex flex-col items-end">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Paso {currentStep} de 4</span>
-              <span className="font-bold text-slate-800">{["Producto Base", "Cajas y Paquetes", "Precios", "Situación de Stock"][currentStep - 1]}</span>
-            </div>
-          </div>
-          <CardTitle className="text-2xl font-black text-slate-900 leading-none">Editar Producto</CardTitle>
-          <CardDescription className="text-slate-400 font-medium">Actualiza las variantes y el stock multivariante</CardDescription>
-        </CardHeader>
+            Producto #{id_producto}
+          </h1>
+          <p className="ep-subtitle">Configuración Maestro de Inventarios</p>
+        </div>
 
-        <CardContent className="p-0">
-          {/* Progress Bar */}
-          <div className="bg-slate-50 border-b border-slate-100 p-6">
-            <div className="flex justify-between items-center relative">
-              <div className="absolute top-1/2 left-0 w-full h-0.5 bg-slate-200 -translate-y-1/2 z-0" />
-              {[1, 2, 3, 4].map((stepNum, i) => (
-                <div key={stepNum} className="relative z-10 flex flex-col items-center group">
-                  <div className={`
-                    w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all duration-500
-                    ${currentStep > stepNum
-                      ? "bg-green-500 text-white scale-110 shadow-lg shadow-green-100"
-                      : currentStep === stepNum
-                        ? "bg-primary text-white scale-125 shadow-xl shadow-blue-100 ring-4 ring-white"
-                        : "bg-white border-2 border-slate-200 text-slate-400"
-                    }
-                  `}>
-                    {currentStep > stepNum ? <Check className="h-5 w-5" /> : stepNum}
-                  </div>
-                  <span className={`text-[10px] mt-2 font-black uppercase tracking-tighter ${currentStep === stepNum ? "text-primary" : "text-slate-400"}`}>
-                    {["Base", "Paquetes", "Precios", "Stock"][i]}
-                  </span>
-                </div>
-              ))}
+        {/* Stepper puro CSS */}
+        <div className="ep-steps-header" style={{ borderRadius: "8px", overflow: "hidden" }}>
+          {steps.map((s, i) => (
+            <div key={i} className={`ep-step-item ${currentStep === i + 1 ? 'active' : ''}`}>
+              <span style={{ fontSize: "20px", marginRight: "8px" }}>{s.icon}</span>
+              <span>{s.title}</span>
             </div>
-          </div>
+          ))}
+        </div>
+      </div>
 
+      <div className="ep-main-card">
+        <div className="ep-step-content">
           <Form {...form}>
-            <div className="p-8 space-y-8">
-              <div className="min-h-[450px] transition-all duration-300">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10">
+
+              <div className="min-h-[450px]">
                 {currentStep === 1 && renderStep1()}
                 {currentStep === 2 && renderStep2()}
                 {currentStep === 3 && renderStep4()}
                 {currentStep === 4 && renderStep3()}
               </div>
 
-              <div className="flex justify-between pt-8 border-t border-slate-100">
-                <Button
+              {/* Botonera de Navegación Final en Puro CSS */}
+              <div className="ep-actions">
+                <button
                   type="button"
-                  variant="outline"
-                  disabled={currentStep === 1}
-                  onClick={() => setCurrentStep(currentStep - 1)}
-                  className="px-8 font-bold text-slate-500 h-12"
+                  disabled={currentStep === 1 || updating}
+                  onClick={() => setCurrentStep(prev => prev - 1)}
+                  className="ep-btn ep-btn-outline"
                 >
-                  <ChevronLeft className="mr-2 h-4 w-4" /> Anterior
-                </Button>
+                  <ChevronLeft className="mr-2" /> Atrás
+                </button>
 
-                {currentStep < 4 ? (
-                  <Button type="button" onClick={handleNext} className="px-10 h-12 font-bold bg-slate-900 hover:bg-black text-white shadow-lg transition-all active:scale-95">
-                    Siguiente <ChevronRight className="ml-2 h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    onClick={() => form.handleSubmit(onSubmit, (errors) => {
-                      console.log('Errores:', errors);
-                      toast.error("Revisa los campos obligatorios y que los precios sean válidos.");
-                    })()}
-                    className="px-12 h-12 font-bold bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-100 transition-all active:scale-95"
-                    disabled={updating}
-                  >
-                    {updating ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Guardando...
-                      </>
-                    ) : (
-                      <>
-                        <Check className="mr-2 h-4 w-4" /> Guardar Cambios
-                      </>
-                    )}
-                  </Button>
-                )}
+                <div className="ep-actions-right">
+                  {currentStep < 4 ? (
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      className="ep-btn ep-btn-primary"
+                    >
+                      Continuar <ChevronRight className="ml-2" />
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={updating}
+                      className="ep-btn ep-btn-success"
+                    >
+                      {updating ? (
+                        <>
+                          <Loader2 className="mr-2 animate-spin" /> Guardando
+                        </>
+                      ) : (
+                        <>
+                          <Check className="mr-2" /> Confirmar
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
+            </form>
           </Form>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </div>
+
+      {/* Disclaimer de seguridad Lite */}
+      <div className="max-w-6xl mx-auto mt-6 px-4 flex justify-between items-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] opacity-60">
+        <span>© 2024 Hermes Advanced POS System</span>
+        <div className="flex gap-4">
+          <span>Security Level: High</span>
+          <span className="text-blue-500">Lite Edition for Win Legacy</span>
+        </div>
+      </div>
+    </div >
   );
 }

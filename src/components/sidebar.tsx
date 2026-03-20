@@ -68,7 +68,7 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
     return (
         <>
             {sidebarOpen && (
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
+                <div className="fixed inset-0 bg-black/40 z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
             )}
 
             <aside className={`aero-sidebar ${sidebarOpen ? "open" : "closed"}`}>
@@ -124,11 +124,17 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
                             <Lock className="w-4 h-4" />
                             <span>Cerrar Caja</span>
                         </button>
-                        <button className="aero-footer-btn btn-logout" onClick={() => {
-                            if (localStorage.getItem("openCaja") != null) {
+                        <button className="aero-footer-btn btn-logout" onClick={async () => {
+                            // @ts-ignore
+                            const api = window["electron-api"];
+                            const storeTurno = await api?.getConfig("open_caja");
+                            const localTurno = localStorage.getItem("openCaja");
+
+                            if (storeTurno != null || localTurno != null) {
                                 navigate("/cerrar-caja");
                                 return;
                             }
+                            await api?.setConfig("open_caja", null);
                             localStorage.removeItem("tkn");
                             localStorage.removeItem("currentUser");
                             localStorage.removeItem("openCaja");

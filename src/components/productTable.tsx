@@ -157,7 +157,7 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
   }, [productos, searchTerm]);
 
   const [currentPage, setCurrentPage] = useState<number>(1)
-  const [pageSize, setPageSize] = useState<number>(50)
+  const [pageSize, setPageSize] = useState<number>(20)
 
 
   const totalItems = filteredProductos.length || 0
@@ -213,7 +213,7 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
       if (selectedRow) {
         // Usar setTimeout para asegurar que el DOM está actualizado
         setTimeout(() => {
-          selectedRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          selectedRow.scrollIntoView({ behavior: 'auto', block: 'center' });
         }, 0);
       }
     }
@@ -432,7 +432,7 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
               }}
               className="h-8 rounded-md border bg-background px-2 text-sm"
             >
-              {[5, 10, 20, 50].map((n) => (
+              {[5, 10, 20].map((n) => (
                 <option key={n} value={n}>{n}</option>
               ))}
             </select>

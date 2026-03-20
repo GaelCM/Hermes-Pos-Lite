@@ -1,14 +1,15 @@
 /* Product Table Aero Styling */
 
 .product-row {
-    transition: all 0.2s ease;
+    /* transition: all 0.2s ease; */
     border-bottom: 1px solid #f1f5f9;
 }
 
 .product-row:hover:not(.out-of-stock) {
     background-color: #f0f7ff !important;
-    transform: scale(1.002);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    background-color: #f0f7ff !important;
+    /* transform: scale(1.002);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); */
     z-index: 10;
 }
 
@@ -54,7 +55,7 @@
     color: white !important;
     border: 1px solid #b91c1c !important;
     box-shadow: 0 1px 2px rgba(220, 38, 38, 0.2);
-    animation: pulse-subtle 2s infinite;
+    /* animation: pulse-subtle 2s infinite; */
 }
 
 .badge-agotado {
@@ -64,17 +65,4 @@
     text-transform: uppercase;
     font-weight: 800 !important;
 }
-
-@keyframes pulse-subtle {
-    0% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.8;
-    }
-
-    100% {
-        opacity: 1;
-    }
-}
+

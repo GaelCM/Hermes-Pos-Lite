@@ -2,9 +2,11 @@
     "appId": "com.electron.hermesPosLite",
     "icon": "./src/electron/logo.jpg",
     "files": [
+        "package.json",
         "dist-react/**/*",
         "src/electron/**/*"
     ],
+    "asar": false,
     "mac": {
         "target": [
             "dmg"
@@ -12,8 +14,20 @@
     },
     "win": {
         "target": [
-            "portable",
-            "msi"
+            {
+                "target": "portable",
+                "arch": [
+                    "x64",
+                    "ia32"
+                ]
+            },
+            {
+                "target": "msi",
+                "arch": [
+                    "x64",
+                    "ia32"
+                ]
+            }
         ]
     },
     "linux": {

@@ -1,7 +1,9 @@
 {
   "name": "hermes-pos-lite",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.8.8",
+  "description": "Sistema de Punto de Venta Hermes Pos Lite",
+  "author": "G-LABS",
   "type": "module",
   "main": "src/electron/loader.cjs",
   "scripts": {
@@ -9,7 +11,11 @@
     "dev:electron": "electron .",
     "dev": "concurrently \"npm:dev:react\" \"wait-on http://localhost:5173 && electron .\"",
     "build": "tsc -b && vite build",
-    "pack": "npm run build && electron-builder --win --x64",
+    "rebuild": "electron-builder install-app-deps",
+    "rebuild:ia32": "electron-rebuild --arch=ia32",
+    "pack": "npm run build && npm run rebuild && electron-builder --win --x64",
+    "pack:ia32": "npm run build && npm run rebuild:ia32 && electron-builder --win --ia32",
+    "pack:all": "npm run build && electron-builder --win",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -32,6 +38,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
+    "electron-store": "^8.1.0",
     "lucide-react": "^0.552.0",
     "node-thermal-printer": "^4.5.0",
     "react": "^19.2.3",

@@ -10,17 +10,29 @@ export default function DashboardPage() {
     const [turnoId, setTurnoId] = useState<number | null>(null);
 
     useEffect(() => {
-        const turnoDataString = localStorage.getItem("openCaja");
-        if (turnoDataString) {
-            try {
-                const data = JSON.parse(turnoDataString);
-                if (data && data.id_turno) {
-                    setTurnoId(data.id_turno);
-                }
-            } catch (e) {
-                console.error("Error parsing openCaja", e);
+        const fetchTurno = async () => {
+            // @ts-ignore
+            const api = window["electron-api"];
+            const storeTurno = await api?.getConfig("open_caja");
+            let id: number | null = null;
+            if (storeTurno) {
+                id = typeof storeTurno === 'number' ? storeTurno : (storeTurno.id_turno || storeTurno.id);
             }
-        }
+
+            if (!id) {
+                const localTurno = localStorage.getItem("openCaja");
+                if (localTurno) {
+                    try {
+                        const parsed = JSON.parse(localTurno);
+                        id = typeof parsed === 'number' ? parsed : (parsed.id_turno || parsed.id);
+                    } catch (e) {
+                        if (!isNaN(Number(localTurno))) id = Number(localTurno);
+                    }
+                }
+            }
+            if (id) setTurnoId(id);
+        };
+        fetchTurno();
     }, []);
 
     if (!turnoId && user.id_rol == 1) {

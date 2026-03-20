@@ -18,14 +18,9 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import DialogCancelarVenta from "./DialogCancelarVenta";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { useCurrentUser } from "@/contexts/currentUser";
 import { useNavigate } from "react-router";
-import { Input } from "@/components/ui/input";
+import "./tablaVentas.css";
 
 interface TablaVentasProps {
     ventas: ReporteVentaDetallado[];
@@ -48,7 +43,6 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
     const { user } = useCurrentUser();
     const navigate = useNavigate();
 
-    // Reset selection when search or sorting changes
     useEffect(() => {
         setSelectedIndex(0);
     }, [searchTerm, sortField, sortDirection]);
@@ -91,17 +85,10 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
         if (sortedVentas.length === 0) return;
 
         const handleKeyDown = (e: KeyboardEvent) => {
-            // Don't navigate if focused on input
+            if (isCancelDialogOpen) return;
             if (document.activeElement?.tagName === 'INPUT') {
-                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                    // Allow moving focus from search to table? 
-                } else if (e.key === 'Enter') {
-                    // Default behavior
-                } else {
-                    return;
-                }
+                if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Enter') return;
             }
-
             switch (e.key) {
                 case 'ArrowUp':
                     e.preventDefault();
@@ -123,9 +110,9 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [sortedVentas, selectedIndex, navigate]);
+    }, [sortedVentas, selectedIndex, navigate, isCancelDialogOpen]);
 
-    // Automatic scroll to selected row
+    // Auto-scroll to selected row
     useEffect(() => {
         if (tableContainerRef.current && sortedVentas.length > 0) {
             const selectedRow = tableContainerRef.current.querySelector(`[data-index="${selectedIndex}"]`);
@@ -135,41 +122,20 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
         }
     }, [selectedIndex, sortedVentas]);
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('es-MX', {
-            style: 'currency',
-            currency: 'MXN'
-        }).format(amount);
-    };
+    const formatCurrency = (amount: number) =>
+        new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(amount);
 
-    const formatDate = (dateString: string) => {
-        return format(new Date(dateString), "d 'de' MMMM, yyyy", { locale: es });
-    };
+    const formatDate = (dateString: string) =>
+        format(new Date(dateString), "d 'de' MMMM, yyyy", { locale: es });
 
-    const formatTime = (dateString: string) => {
-        return format(new Date(dateString), "HH:mm:ss", { locale: es });
-    };
+    const formatTime = (dateString: string) =>
+        format(new Date(dateString), "HH:mm:ss", { locale: es });
 
     const getEstadoConfig = (estado: number) => {
         const estados = {
-            1: {
-                label: 'Completada',
-                icon: CheckCircle2,
-                variant: 'default' as const,
-                className: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
-            },
-            0: {
-                label: 'Cancelada',
-                icon: XCircle,
-                variant: 'destructive' as const,
-                className: 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20 hover:bg-red-500/20'
-            },
-            3: {
-                label: 'Pendiente',
-                icon: AlertCircle,
-                variant: 'secondary' as const,
-                className: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20'
-            }
+            1: { label: 'Completada', icon: CheckCircle2, badgeClass: 'tv-badge tv-badge-completada' },
+            0: { label: 'Cancelada', icon: XCircle, badgeClass: 'tv-badge tv-badge-cancelada' },
+            3: { label: 'Pendiente', icon: AlertCircle, badgeClass: 'tv-badge tv-badge-pendiente' },
         };
         return estados[estado as keyof typeof estados] || estados[3];
     };
@@ -179,415 +145,300 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
         setIsCancelDialogOpen(true);
     };
 
-    const totalVentas = filteredVentas.reduce((sum, venta) => sum + Number(venta.total_venta), 0);
-    const totalProductos = filteredVentas.reduce((sum, venta) => sum + Number(venta.cantidad_productos), 0);
+    const totalVentas = filteredVentas.reduce((sum, v) => sum + Number(v.total_venta), 0);
+    const totalProductos = filteredVentas.reduce((sum, v) => sum + Number(v.cantidad_productos), 0);
 
+    /* ---- Loading ---- */
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center py-16 space-y-4">
-                <div className="relative w-16 h-16">
-                    <div className="absolute inset-0 border-4 border-primary/20 rounded-full"></div>
-                    <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                </div>
-                <p className="text-muted-foreground font-medium">Cargando ventas...</p>
+            <div className="tv-loading">
+                <div className="tv-spinner" />
+                <p>Cargando ventas...</p>
             </div>
         );
     }
 
+    /* ---- Empty ---- */
     if (ventas.length === 0) {
         return (
-            <Card className="border-dashed">
-                <CardContent className="flex flex-col items-center justify-center py-16 space-y-4">
-                    <div className="rounded-full bg-muted p-6">
-                        <Receipt className="w-12 h-12 text-muted-foreground" />
-                    </div>
-                    <div className="text-center space-y-2">
-                        <h3 className="text-xl font-semibold">No hay ventas registradas</h3>
-                        <p className="text-muted-foreground">No se encontraron ventas en el período seleccionado</p>
-                    </div>
-                </CardContent>
-            </Card>
+            <div className="tv-empty">
+                <div className="tv-empty-icon">
+                    <Receipt size={28} color="#374151" />
+                </div>
+                <p className="tv-empty-title">No hay ventas registradas</p>
+                <p className="tv-empty-desc">No se encontraron ventas en el período seleccionado</p>
+            </div>
         );
     }
 
+    /* ---- Main ---- */
     return (
-        <div className="space-y-6">
-            {/* Estadísticas Resumen */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-background hover:shadow-lg transition-all duration-300">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Total Ventas
-                        </CardTitle>
-                        <div className="p-2 bg-blue-500/10 rounded-lg">
-                            <Receipt className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-blue-700 dark:text-blue-400">{filteredVentas.length}</div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Transacciones realizadas
-                        </p>
-                    </CardContent>
-                </Card>
+        <div>
+            {/* KPIs */}
+            <div className="tv-kpi-grid">
+                {/* Total de ventas */}
+                <div className="tv-kpi-card">
+                    <div className="tv-kpi-header blue">
+                        <span className="tv-kpi-title">Total Ventas</span>
+                        <span className="tv-kpi-icon blue"><Receipt size={18} color="#1d4ed8" /></span>
+                    </div>
+                    <div className="tv-kpi-body">
+                        <div className="tv-kpi-value blue">{filteredVentas.length}</div>
+                        <div className="tv-kpi-label">Transacciones</div>
+                    </div>
+                </div>
 
-                <Card className="border-l-4 border-l-emerald-500 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/20 dark:to-background hover:shadow-lg transition-all duration-300">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Ingresos Totales
-                        </CardTitle>
-                        <div className="p-2 bg-emerald-500/10 rounded-lg">
-                            <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-emerald-700 dark:text-emerald-400">
-                            {formatCurrency(totalVentas)}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Monto total vendido
-                        </p>
-                    </CardContent>
-                </Card>
+                {/* Ingresos */}
+                <div className="tv-kpi-card">
+                    <div className="tv-kpi-header green">
+                        <span className="tv-kpi-title">Ingresos Totales</span>
+                        <span className="tv-kpi-icon green"><TrendingUp size={18} color="#15803d" /></span>
+                    </div>
+                    <div className="tv-kpi-body">
+                        <div className="tv-kpi-value green">{formatCurrency(totalVentas)}</div>
+                        <div className="tv-kpi-label">Monto total vendido</div>
+                    </div>
+                </div>
 
-                <Card className="border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/20 dark:to-background hover:shadow-lg transition-all duration-300">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Productos Vendidos
-                        </CardTitle>
-                        <div className="p-2 bg-purple-500/10 rounded-lg">
-                            <Package className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-purple-700 dark:text-purple-400">{totalProductos}</div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Unidades totales
-                        </p>
-                    </CardContent>
-                </Card>
+                {/* Productos */}
+                <div className="tv-kpi-card">
+                    <div className="tv-kpi-header purple">
+                        <span className="tv-kpi-title">Productos Vendidos</span>
+                        <span className="tv-kpi-icon purple"><Package size={18} color="#7e22ce" /></span>
+                    </div>
+                    <div className="tv-kpi-body">
+                        <div className="tv-kpi-value purple">{totalProductos}</div>
+                        <div className="tv-kpi-label">Unidades totales</div>
+                    </div>
+                </div>
 
-                <Card className="border-l-4 border-l-amber-500 bg-gradient-to-br from-amber-50 to-white dark:from-amber-950/20 dark:to-background hover:shadow-lg transition-all duration-300">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Ticket Promedio
-                        </CardTitle>
-                        <div className="p-2 bg-amber-500/10 rounded-lg">
-                            <DollarSign className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-amber-700 dark:text-amber-400">
+                {/* Ticket promedio */}
+                <div className="tv-kpi-card">
+                    <div className="tv-kpi-header amber">
+                        <span className="tv-kpi-title">Ticket Promedio</span>
+                        <span className="tv-kpi-icon amber"><DollarSign size={18} color="#b45309" /></span>
+                    </div>
+                    <div className="tv-kpi-body">
+                        <div className="tv-kpi-value amber">
                             {formatCurrency(filteredVentas.length > 0 ? totalVentas / filteredVentas.length : 0)}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Promedio por venta
-                        </p>
-                    </CardContent>
-                </Card>
+                        <div className="tv-kpi-label">Promedio por venta</div>
+                    </div>
+                </div>
             </div>
 
-            {/* Tabla de Ventas */}
-            <Card className="overflow-hidden">
-                <CardHeader>
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="space-y-1">
-                            <CardTitle className="flex items-center gap-2">
-                                <Receipt className="h-5 w-5" />
-                                Listado de Ventas
-                            </CardTitle>
-                            <CardDescription>
-                                Haz clic en una fila para ver más detalles de la venta
-                            </CardDescription>
+            {/* Tabla principal */}
+            <div className="tv-card">
+                {/* Header */}
+                <div className="tv-card-header">
+                    <div>
+                        <div className="tv-card-title">
+                            <Receipt size={22} />
+                            Listado de Ventas
                         </div>
-                        <div className="relative w-full md:w-72">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Buscar por #Folio o cliente..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                autoFocus
-                                className="pl-9 h-10 bg-background border-primary/20 focus:border-primary focus:ring-primary/20 transition-all"
-                            />
-                        </div>
+                        <div className="tv-card-desc">Haz clic en una fila o doble clic para ver el detalle</div>
                     </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                    <div className="overflow-x-auto" ref={tableContainerRef}>
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="bg-muted/50">
-                                    <TableHead className="w-[40px] px-2 py-4"></TableHead>
-                                    <TableHead
-                                        className="cursor-pointer hover:bg-muted/80 transition-colors px-2 py-4"
-                                        onClick={() => handleSort('id_venta')}
-                                    >
-                                        <span className="font-bold text-sm md:text-base">ID</span>
-                                    </TableHead>
-                                    <TableHead
-                                        className="cursor-pointer hover:bg-muted/80 transition-colors px-2 py-4"
-                                        onClick={() => handleSort('fecha_venta')}
-                                    >
-                                        <span className="font-bold text-sm md:text-base">Fecha/Hora</span>
-                                    </TableHead>
-                                    <TableHead
-                                        className="cursor-pointer hover:bg-muted/80 transition-colors text-right px-2 py-4"
-                                        onClick={() => handleSort('total_venta')}
-                                    >
-                                        <span className="font-bold text-sm md:text-base">Total</span>
-                                    </TableHead>
-                                    <TableHead className="px-2 py-4 text-sm md:text-base font-bold whitespace-nowrap">Pago</TableHead>
-                                    <TableHead
-                                        className="cursor-pointer hover:bg-muted/80 transition-colors text-center px-2 py-4"
-                                        onClick={() => handleSort('cantidad_productos')}
-                                    >
-                                        <span className="font-bold text-sm md:text-base">Pzas</span>
-                                    </TableHead>
-                                    <TableHead className="px-2 py-4 text-sm md:text-base font-bold">Estado</TableHead>
-                                    <TableHead className="px-2 py-4 text-sm md:text-base font-bold">Usuario</TableHead>
-                                    <TableHead className="px-2 py-4 text-sm md:text-base font-bold">Cliente</TableHead>
-                                    <TableHead className="px-2 py-4 text-sm md:text-base font-bold text-center">Acciones</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {sortedVentas.map((venta, index) => {
-                                    const EstadoIcon = getEstadoConfig(venta.estado_venta).icon;
-                                    const isExpanded = expandedVenta === venta.id_venta;
-                                    const isSelected = selectedIndex === index;
+                    <div className="tv-search-wrap">
+                        <Search className="tv-search-icon" size={18} />
+                        <input
+                            className="tv-search-input"
+                            placeholder="Buscar por #folio o cliente..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            autoFocus
+                        />
+                    </div>
+                </div>
 
-                                    return (
-                                        <div key={venta.id_venta} className="contents">
-                                            <TableRow
-                                                data-index={index}
-                                                className={`cursor-pointer transition-all duration-200 select-none ${isSelected
-                                                    ? 'bg-blue-300 border-l-4 border-l-blue-600 dark:bg-blue-400/20'
-                                                    : 'hover:bg-muted/50'
-                                                    }`}
-                                                onClick={() => setSelectedIndex(index)}
-                                                onDoubleClick={() => navigate(`/reportes/detalleVenta?id=${venta.id_venta}&cliente=${venta.nombre_cliente}`)}
-                                            >
-                                                <TableCell>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-6 w-6 p-0"
+                {/* Tabla */}
+                <div className="tv-table-wrap" ref={tableContainerRef}>
+                    <table className="tv-table">
+                        <thead>
+                            <tr>
+                                <th style={{ width: 40 }}></th>
+                                <th onClick={() => handleSort('id_venta')}>ID</th>
+                                <th onClick={() => handleSort('fecha_venta')}>Fecha / Hora</th>
+                                <th className="text-right" onClick={() => handleSort('total_venta')}>Total</th>
+                                <th>Pago</th>
+                                <th className="text-center" onClick={() => handleSort('cantidad_productos')}>Pzas</th>
+                                <th>Estado</th>
+                                <th>Usuario</th>
+                                <th>Cliente</th>
+                                <th className="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {sortedVentas.map((venta, index) => {
+                                const EstadoIcon = getEstadoConfig(venta.estado_venta).icon;
+                                const isExpanded = expandedVenta === venta.id_venta;
+                                const isSelected = selectedIndex === index;
+
+                                return (
+                                    <>
+                                        <tr
+                                            key={venta.id_venta}
+                                            data-index={index}
+                                            className={isSelected ? 'tv-row-selected' : ''}
+                                            onClick={() => setSelectedIndex(index)}
+                                            onDoubleClick={() => navigate(`/reportes/detalleVenta?id=${venta.id_venta}&cliente=${venta.nombre_cliente}`)}
+                                        >
+                                            {/* Expand button */}
+                                            <td>
+                                                <button
+                                                    className="tv-btn-expand"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setExpandedVenta(isExpanded ? null : venta.id_venta);
+                                                    }}
+                                                >
+                                                    {isExpanded
+                                                        ? <ChevronUp size={16} />
+                                                        : <ChevronDown size={16} />}
+                                                </button>
+                                            </td>
+
+                                            {/* ID */}
+                                            <td><span className="tv-id-badge">#{venta.id_venta}</span></td>
+
+                                            {/* Fecha */}
+                                            <td>
+                                                <div className="tv-date">{formatDate(venta.fecha_venta).split(',')[0]}</div>
+                                                <div className="tv-time">{formatTime(venta.fecha_venta)}</div>
+                                            </td>
+
+                                            {/* Total */}
+                                            <td className="text-right">
+                                                <span className="tv-amount">{formatCurrency(venta.total_venta)}</span>
+                                            </td>
+
+                                            {/* Método de pago */}
+                                            <td>
+                                                <span className="tv-badge tv-badge-neutral">{venta.metodo_pago_descripcion}</span>
+                                            </td>
+
+                                            {/* Piezas */}
+                                            <td className="text-center">
+                                                <span className="tv-badge tv-badge-neutral">{venta.cantidad_productos}</span>
+                                            </td>
+
+                                            {/* Estado */}
+                                            <td>
+                                                <span className={getEstadoConfig(venta.estado_venta).badgeClass}>
+                                                    <EstadoIcon size={13} />
+                                                    {getEstadoConfig(venta.estado_venta).label}
+                                                </span>
+                                            </td>
+
+                                            {/* Usuario */}
+                                            <td><span className="tv-truncate">{venta.nombre_usuario}</span></td>
+
+                                            {/* Cliente */}
+                                            <td><span className="tv-truncate">{venta.nombre_cliente}</span></td>
+
+                                            {/* Acciones */}
+                                            <td className="text-center">
+                                                <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                                                    <button
+                                                        className="tv-btn tv-btn-view"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            setExpandedVenta(isExpanded ? null : venta.id_venta);
+                                                            navigate(`/reportes/detalleVenta?id=${venta.id_venta}&cliente=${venta.nombre_cliente}`);
                                                         }}
                                                     >
-                                                        {isExpanded ? (
-                                                            <ChevronUp className="h-4 w-4" />
-                                                        ) : (
-                                                            <ChevronDown className="h-4 w-4" />
-                                                        )}
-                                                    </Button>
-                                                </TableCell>
-                                                <TableCell className="px-2 py-4 font-mono">
-                                                    <span className="text-sm md:text-base font-bold bg-primary/5 px-2 py-1 rounded border border-primary/10">
-                                                        #{venta.id_venta}
-                                                    </span>
-                                                </TableCell>
-                                                <TableCell className="px-2 py-4">
-                                                    <div className="flex flex-col text-sm md:text-base font-bold leading-tight">
-                                                        <span className="whitespace-nowrap">
-                                                            {formatDate(venta.fecha_venta).split(',')[0]}
-                                                        </span>
-                                                        <span className="text-muted-foreground whitespace-nowrap text-xs md:text-sm">
-                                                            {formatTime(venta.fecha_venta)}
-                                                        </span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="px-2 py-4 text-right">
-                                                    <span className="font-black text-sm md:text-lg text-emerald-600 dark:text-emerald-400">
-                                                        {formatCurrency(venta.total_venta)}
-                                                    </span>
-                                                </TableCell>
-                                                <TableCell className="px-2 py-4">
-                                                    <Badge variant="secondary" className="px-2 py-1 text-xs md:text-sm font-bold whitespace-nowrap">
-                                                        {venta.metodo_pago_descripcion}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="px-2 py-4 text-center">
-                                                    <Badge variant="outline" className="px-2 py-1 text-xs md:text-sm font-bold bg-purple-500/10 text-purple-700 border-purple-500/20">
-                                                        {venta.cantidad_productos}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="px-2 py-4">
-                                                    <Badge className={`px-2 py-1 text-xs md:text-sm font-bold gap-1 ${getEstadoConfig(venta.estado_venta).className}`}>
-                                                        <EstadoIcon className="h-4 w-4" />
-                                                        {getEstadoConfig(venta.estado_venta).label}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="px-2 py-4">
-                                                    <span className="font-bold text-sm md:text-base truncate max-w-[100px] block">{venta.nombre_usuario}</span>
-                                                </TableCell>
-                                                <TableCell className="px-2 py-4">
-                                                    <span className="font-bold text-sm md:text-base truncate max-w-[120px] block">{venta.nombre_cliente}</span>
-                                                </TableCell>
-                                                <TableCell className="px-2 py-4">
-                                                    <div className="flex items-center justify-center gap-2">
-                                                        <Button
-                                                            variant="default"
-                                                            size="sm"
-                                                            className="h-9 gap-2 font-bold"
+                                                        <Eye size={14} /> VER
+                                                    </button>
+                                                    {user?.id_rol === 1 && (
+                                                        <button
+                                                            className="tv-btn tv-btn-cancel"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                navigate(`/reportes/detalleVenta?id=${venta.id_venta}&cliente=${venta.nombre_cliente}`);
+                                                                cancelarVenta(venta.id_venta);
                                                             }}
                                                         >
-                                                            <Eye className="h-4 w-4" />
-                                                            Ver Detalles
-                                                        </Button>
-                                                        {user?.id_rol === 1 && (
-                                                            <Button
-                                                                variant="destructive"
-                                                                size="sm"
-                                                                className="h-9 gap-2 font-bold"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    cancelarVenta(venta.id_venta);
-                                                                }}
-                                                            >
-                                                                <Trash className="h-4 w-4" />
-                                                                Cancelar Venta
-                                                            </Button>
-                                                        )}
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
+                                                            <Trash size={14} /> CANCELAR
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
 
-                                            {/* Fila Expandida con Detalles */}
-                                            {isExpanded && (
-                                                <TableRow>
-                                                    <TableCell colSpan={9} className="bg-muted/30 p-0">
-                                                        <div className="p-6 space-y-4 animate-in slide-in-from-top-2 duration-300">
-                                                            <div className="flex items-center gap-2 mb-4">
-                                                                <Receipt className="h-5 w-5 text-primary" />
-                                                                <h4 className="font-semibold text-lg">Detalles de Venta #{venta.id_venta}</h4>
-                                                            </div>
-
-                                                            <Separator />
-
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                                                                <div className="space-y-1 p-3 rounded-lg bg-background border">
-                                                                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                                                        Monto Recibido
-                                                                    </label>
-                                                                    <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
-                                                                        {formatCurrency(venta.monto_recibido)}
-                                                                    </p>
-                                                                </div>
-
-                                                                <div className="space-y-1 p-3 rounded-lg bg-background border">
-                                                                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                                                        Cambio
-                                                                    </label>
-                                                                    <p className="text-lg font-semibold text-amber-600 dark:text-amber-400">
-                                                                        {formatCurrency(venta.cambio)}
-                                                                    </p>
-                                                                </div>
-
-                                                                <div className="space-y-1 p-3 rounded-lg bg-background border">
-                                                                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                                                        ID Turno
-                                                                    </label>
-                                                                    <p className="text-lg font-semibold font-mono">
-                                                                        #{venta.id_turno}
-                                                                    </p>
-                                                                </div>
-
-                                                                <div className="space-y-1 p-3 rounded-lg bg-background border">
-                                                                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                                                        Estado Turno
-                                                                    </label>
-                                                                    <p className="text-lg font-semibold capitalize">
-                                                                        {venta.turno_estado}
-                                                                    </p>
-                                                                </div>
-
-                                                                <div className="space-y-1 p-3 rounded-lg bg-background border">
-                                                                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                                                        Apertura Turno
-                                                                    </label>
-                                                                    <p className="text-sm font-medium">
-                                                                        {formatDate(venta.turno_fecha_apertura)}
-                                                                    </p>
-                                                                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                                                        <Clock className="h-3 w-3" />
-                                                                        {formatTime(venta.turno_fecha_apertura)}
-                                                                    </p>
-                                                                </div>
-
-                                                                {venta.turno_fecha_cierre && (
-                                                                    <div className="space-y-1 p-3 rounded-lg bg-background border">
-                                                                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                                                            Cierre Turno
-                                                                        </label>
-                                                                        <p className="text-sm font-medium">
-                                                                            {formatDate(venta.turno_fecha_cierre)}
-                                                                        </p>
-                                                                        <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                                                            <Clock className="h-3 w-3" />
-                                                                            {formatTime(venta.turno_fecha_cierre)}
-                                                                        </p>
-                                                                    </div>
-                                                                )}
-
-                                                                <div className="space-y-1 p-3 rounded-lg bg-background border">
-                                                                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                                                        Email Usuario
-                                                                    </label>
-                                                                    <p className="text-sm font-medium break-all">
-                                                                        {venta.email_usuario}
-                                                                    </p>
-                                                                </div>
-
-                                                                {venta.id_cliente && (
-                                                                    <div className="space-y-1 p-3 rounded-lg bg-background border">
-                                                                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                                                            ID Cliente
-                                                                        </label>
-                                                                        <p className="text-lg font-semibold font-mono">
-                                                                            #{venta.id_cliente}
-                                                                        </p>
-                                                                    </div>
-                                                                )}
-
-                                                                {venta.nombre_cliente && (
-                                                                    <div className="space-y-1 p-3 rounded-lg bg-background border">
-                                                                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                                                            Nombre Cliente
-                                                                        </label>
-                                                                        <p className="text-lg font-semibold font-mono">
-                                                                            {venta.nombre_cliente}
-                                                                        </p>
-                                                                    </div>
-                                                                )}
-
-
-                                                            </div>
+                                        {/* Fila expandida */}
+                                        {isExpanded && (
+                                            <tr className="tv-expand-row" key={`exp-${venta.id_venta}`}>
+                                                <td colSpan={10}>
+                                                    <div className="tv-expand-panel">
+                                                        <div className="tv-expand-title">
+                                                            <Receipt size={20} />
+                                                            Detalles de Venta #{venta.id_venta}
                                                         </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </CardContent>
-            </Card>
-
+                                                        <div className="tv-expand-divider" />
+                                                        <div className="tv-detail-grid">
+                                                            <div className="tv-detail-item">
+                                                                <div className="tv-detail-label">Monto Recibido</div>
+                                                                <div className="tv-detail-value amount">{formatCurrency(venta.monto_recibido)}</div>
+                                                            </div>
+                                                            <div className="tv-detail-item">
+                                                                <div className="tv-detail-label">Cambio</div>
+                                                                <div className="tv-detail-value amount">{formatCurrency(venta.cambio)}</div>
+                                                            </div>
+                                                            <div className="tv-detail-item">
+                                                                <div className="tv-detail-label">ID Turno</div>
+                                                                <div className="tv-detail-value">#{venta.id_turno}</div>
+                                                            </div>
+                                                            <div className="tv-detail-item">
+                                                                <div className="tv-detail-label">Estado Turno</div>
+                                                                <div className="tv-detail-value">{venta.turno_estado}</div>
+                                                            </div>
+                                                            <div className="tv-detail-item">
+                                                                <div className="tv-detail-label">Apertura Turno</div>
+                                                                <div className="tv-detail-value small">{formatDate(venta.turno_fecha_apertura)}</div>
+                                                                <div className="tv-detail-subvalue">
+                                                                    <Clock size={12} /> {formatTime(venta.turno_fecha_apertura)}
+                                                                </div>
+                                                            </div>
+                                                            {venta.turno_fecha_cierre && (
+                                                                <div className="tv-detail-item">
+                                                                    <div className="tv-detail-label">Cierre Turno</div>
+                                                                    <div className="tv-detail-value small">{formatDate(venta.turno_fecha_cierre)}</div>
+                                                                    <div className="tv-detail-subvalue">
+                                                                        <Clock size={12} /> {formatTime(venta.turno_fecha_cierre)}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            <div className="tv-detail-item">
+                                                                <div className="tv-detail-label">Email Usuario</div>
+                                                                <div className="tv-detail-value small">{venta.email_usuario}</div>
+                                                            </div>
+                                                            {venta.id_cliente && (
+                                                                <div className="tv-detail-item">
+                                                                    <div className="tv-detail-label">ID Cliente</div>
+                                                                    <div className="tv-detail-value">#{venta.id_cliente}</div>
+                                                                </div>
+                                                            )}
+                                                            {venta.nombre_cliente && (
+                                                                <div className="tv-detail-item">
+                                                                    <div className="tv-detail-label">Nombre Cliente</div>
+                                                                    <div className="tv-detail-value">{venta.nombre_cliente}</div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
             <DialogCancelarVenta
                 isOpen={isCancelDialogOpen}
                 setIsOpen={setIsCancelDialogOpen}
                 idVenta={ventaToCancel}
-                onSuccess={() => {
-                    onVentaCancelada?.();
-                }}
+                onSuccess={() => { onVentaCancelada?.(); }}
             />
         </div>
     );

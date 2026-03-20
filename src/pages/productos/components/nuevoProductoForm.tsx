@@ -5,7 +5,7 @@ import { z } from "zod";
 import { redondearCantidad } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Check, ChevronLeft, ChevronRight, Loader2, Package, Plus, Trash2 } from "lucide-react";
 import React from "react";
@@ -23,6 +23,7 @@ import type { Categoria } from "@/types/Categoria";
 import { obtenerCategoriasApi } from "@/api/categoriasApi/categoriasApi";
 import { obtenerSucursalesApi } from "@/api/sucursalApi/sucursalApi";
 import type { Sucursal } from "@/types/Sucursal";
+import "./editarProducto.css";
 
 const formSchema = z.object({
   nombre_producto: z.string().min(1, 'El nombre del producto es requerido'),
@@ -154,7 +155,7 @@ export default function NuevoProductoForm() {
       valid = (await Promise.all(promises)).every(r => r);
     }
     else if (currentStep === 3) {
-      // Validar precios en las variantes seleccionadas
+      // Step 3 = Precios: validar precios de venta por sucursal
       const fieldsToValidate: any[] = [];
       variantes.forEach((v, vIdx) => {
         v.sucursales_venta.forEach((_, svIdx) => {
@@ -171,6 +172,7 @@ export default function NuevoProductoForm() {
       }
     }
     else if (currentStep === 4) {
+      // Step 4 = Stock: validar inventario
       valid = await form.trigger(["sucursales_inventario"]);
     }
 
@@ -522,19 +524,19 @@ export default function NuevoProductoForm() {
               const selected = invIndex !== -1;
 
               return (
-                <Card key={s.id_sucursal} className={`border-2 transition-all duration-300 ${selected ? 'border-primary shadow-lg bg-white scale-[1.02]' : 'border-dashed border-gray-200 bg-gray-50/50'}`}>
+                <Card key={s.id_sucursal} className={`border-2 transition-all duration-300 ${selected ? 'border-black shadow-lg bg-white scale-[1.02]' : 'border-dashed border-black bg-white'}`}>
                   {/* Header */}
                   <div
-                    className={`p-3 flex items-center justify-between cursor-pointer ${selected ? 'bg-primary/5 border-b border-primary/10' : ''}`}
+                    className={`p-3 flex items-center justify-between cursor-pointer ${selected ? 'bg-black text-white border-b-2 border-black' : 'hover:bg-gray-100'}`}
                     onClick={() => toggleSucursalInventario(s.id_sucursal)}
                   >
                     <div className="flex items-center gap-2">
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selected ? 'bg-primary border-primary' : 'bg-white border-slate-300'}`}>
-                        {selected && <Check className="w-3 h-3 text-white font-bold" />}
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selected ? 'bg-white border-white' : 'bg-white border-black'}`}>
+                        {selected && <Check className="w-3 h-3 text-black font-black" />}
                       </div>
-                      <span className={`font-bold ${selected ? 'text-primary uppercase tracking-tight' : 'text-gray-500'}`}>{s.nombre}</span>
+                      <span className={`font-black uppercase ${selected ? 'text-white tracking-tight' : 'text-black'}`}>{s.nombre}</span>
                     </div>
-                    {!selected && <Plus className="w-4 h-4 text-gray-400" />}
+                    {!selected && <Plus className="w-4 h-4 text-black" />}
                   </div>
 
                   {selected && (
@@ -641,24 +643,24 @@ export default function NuevoProductoForm() {
               const selected = svIndex !== -1;
 
               return (
-                <Card key={suc.id_sucursal} className={`border-2 transition-all duration-200 overflow-hidden ${selected ? 'border-primary shadow-md bg-white' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-100'}`}>
+                <Card key={suc.id_sucursal} className={`border-2 transition-all duration-200 overflow-hidden ${selected ? 'border-black shadow-md bg-white' : 'border-black bg-white hover:bg-gray-100'}`}>
 
                   <div
-                    className={`p-3 flex items-center justify-between cursor-pointer transition-colors ${selected ? 'bg-green-50 border-b border-green-100' : ''}`}
+                    className={`p-3 flex items-center justify-between cursor-pointer transition-colors ${selected ? 'bg-black text-white border-b-2 border-black' : ''}`}
                     onClick={() => toggleSucursalVenta(vIndex, suc.id_sucursal)}
                   >
                     <div className="flex items-center gap-2">
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selected ? 'bg-green-600 border-green-600' : 'bg-white border-slate-300'}`}>
-                        {selected && <Check className="w-3 h-3 text-white font-bold" />}
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selected ? 'bg-white border-white' : 'bg-white border-black'}`}>
+                        {selected && <Check className="w-3 h-3 text-black font-black" />}
                       </div>
-                      <span className={`text-sm font-bold ${selected ? 'text-green-900' : 'text-slate-800'}`}>
+                      <span className={`text-sm font-black uppercase ${selected ? 'text-white' : 'text-black'}`}>
                         {suc.nombre}
                       </span>
                     </div>
                   </div>
 
                   {selected && (
-                    <CardContent className="p-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <CardContent className="p-3 animate-in fade-in slide-in-from-top-2 duration-200 bg-white">
                       <div className="space-y-3">
                         <FormField
                           control={form.control}
@@ -719,50 +721,41 @@ export default function NuevoProductoForm() {
     </div>
   );
 
-  return (
-    <div className="p-6">
-      <Card className="border-none shadow-xl overflow-hidden">
-        <div className="h-2 bg-primary w-full" />
-        <CardHeader className="bg-white border-b border-slate-100">
-          <div className="w-full flex justify-between items-center mb-4">
-            <Link to={"/productos"} className="flex items-center text-slate-500 hover:text-primary transition-colors font-bold text-sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Regresar
-            </Link>
-            <div className="flex flex-col items-end">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Paso {currentStep} de 4</span>
-              <span className="font-bold text-slate-800">{["Producto Base", "Cajas y Paquetes", "Precios", "Surtido Inicial"][currentStep - 1]}</span>
-            </div>
-          </div>
-          <CardTitle className="text-2xl font-black text-slate-900 leading-none">Nuevo Producto</CardTitle>
-          <CardDescription className="text-slate-400 font-medium">Define las variantes y el stock inicial por presentación</CardDescription>
-        </CardHeader>
+  const steps = [
+    { title: "Básico", icon: "📝" },
+    { title: "Paquetes", icon: "📦" },
+    { title: "Precios", icon: "💰" },
+    { title: "Stock", icon: "🏢" }
+  ];
 
-        <CardContent className="p-0">
-          {/* Progress Bar */}
-          <div className="bg-slate-50 border-b border-slate-100 p-6">
-            <div className="flex justify-between items-center relative">
-              <div className="absolute top-1/2 left-0 w-full h-0.5 bg-slate-200 -translate-y-1/2 z-0" />
-              {[1, 2, 3, 4].map((stepNum, i) => (
-                <div key={stepNum} className="relative z-10 flex flex-col items-center group">
-                  <div className={`
-                    w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all duration-500
-                    ${currentStep > stepNum
-                      ? "bg-green-500 text-white scale-110 shadow-lg shadow-green-100"
-                      : currentStep === stepNum
-                        ? "bg-primary text-white scale-125 shadow-xl shadow-blue-100 ring-4 ring-white"
-                        : "bg-white border-2 border-slate-200 text-slate-400"
-                    }
-                  `}>
-                    {currentStep > stepNum ? <Check className="h-5 w-5" /> : stepNum}
-                  </div>
-                  <span className={`text-[10px] mt-2 font-black uppercase tracking-tighter ${currentStep === stepNum ? "text-primary" : "text-slate-400"}`}>
-                    {["Base", "Paquetes", "Precios", "Surtido"][i]}
-                  </span>
-                </div>
-              ))}
+  return (
+    <div className="ep-wrapper">
+      <div className="ep-header">
+        <div>
+          <h1 className="ep-title">
+            <Link to={"/productos"} className="inline-flex mr-4 -mt-2">
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="w-8 h-8 text-black" />
+              </Button>
+            </Link>
+            Nuevo Producto
+          </h1>
+          <p className="ep-subtitle">Define las variantes y el stock inicial por presentación</p>
+        </div>
+
+        {/* Stepper puro CSS */}
+        <div className="ep-steps-header" style={{ borderRadius: "8px", overflow: "hidden" }}>
+          {steps.map((s, i) => (
+            <div key={i} className={`ep-step-item ${currentStep === i + 1 ? 'active' : ''}`}>
+              <span style={{ fontSize: "20px", marginRight: "8px" }}>{s.icon}</span>
+              <span>{s.title}</span>
             </div>
-          </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="ep-main-card">
+        <div className="ep-step-content">
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="p-8 space-y-8">
@@ -773,43 +766,44 @@ export default function NuevoProductoForm() {
                 {currentStep === 4 && renderStep3()}
               </div>
 
-              <div className="flex justify-between pt-8 border-t border-slate-100">
-                <Button
+              <div className="ep-actions">
+                <button
                   type="button"
-                  variant="outline"
                   disabled={currentStep === 1}
                   onClick={() => setCurrentStep(currentStep - 1)}
-                  className="px-8 font-bold text-slate-500 h-12"
+                  className="ep-btn ep-btn-outline"
                 >
-                  <ChevronLeft className="mr-2 h-4 w-4" /> Anterior
-                </Button>
+                  <ChevronLeft className="mr-2" /> Anterior
+                </button>
 
-                {currentStep < 4 ? (
-                  <Button type="button" onClick={handleNext} className="px-10 h-12 font-bold bg-slate-900 hover:bg-black text-white shadow-lg transition-all active:scale-95">
-                    Siguiente <ChevronRight className="ml-2 h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button
-                    type="submit"
-                    className="px-12 h-12 font-bold bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-100 transition-all active:scale-95"
-                    disabled={creating}
-                  >
-                    {creating ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creando...
-                      </>
-                    ) : (
-                      <>
-                        <Check className="mr-2 h-4 w-4" /> Finalizar y Crear
-                      </>
-                    )}
-                  </Button>
-                )}
+                <div className="ep-actions-right">
+                  {currentStep < 4 ? (
+                    <button type="button" onClick={handleNext} className="ep-btn ep-btn-primary">
+                      Siguiente <ChevronRight className="ml-2" />
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={creating}
+                      className="ep-btn ep-btn-success"
+                    >
+                      {creating ? (
+                        <>
+                          <Loader2 className="mr-2 animate-spin" /> Creando...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="mr-2" /> Finalizar y Crear
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
             </form>
           </Form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

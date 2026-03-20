@@ -49,8 +49,22 @@ export default function NuevaCompraForm() {
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     const carrito = getCarritoActivo();
-    const userRef = localStorage.getItem("openCaja");
-    const openCaja = userRef ? JSON.parse(userRef) : null;
+    const [openCaja, setOpenCaja] = useState<any>(null);
+
+    useEffect(() => {
+        const fetchCaja = async () => {
+            // @ts-ignore
+            const api = window["electron-api"];
+            const storeTurno = await api?.getConfig("open_caja");
+            if (storeTurno) {
+                setOpenCaja(storeTurno);
+            } else {
+                const localTurno = localStorage.getItem("openCaja");
+                if (localTurno) setOpenCaja(JSON.parse(localTurno));
+            }
+        };
+        fetchCaja();
+    }, []);
 
     useEffect(() => {
         if (!carrito) crearCarrito("Nueva Compra");

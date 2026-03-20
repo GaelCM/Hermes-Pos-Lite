@@ -5,80 +5,73 @@
 
 :root {
   --background: #f0f3f9;
-  /* Light bluish white */
   --foreground: #0f172a;
-  /* Dark blue-black */
   --card: #ffffff;
   --card-foreground: #0f172a;
   --popover: #ffffff;
   --popover-foreground: #0f172a;
-  --primary: #2563eb;
-  /* Windows Aero Blue */
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.88 0.02 240);
-  /* Metallic Gray-Blue */
-  --secondary-foreground: oklch(0.15 0.02 240);
-  --muted: oklch(0.96 0.01 240);
-  --muted-foreground: oklch(0.4 0.02 240);
-  --accent: oklch(0.85 0.1 220);
-  /* Taskbar light blue highlight */
-  --accent-foreground: oklch(0.15 0.02 240);
-  --destructive: oklch(0.5 0.2 25);
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.8 0.02 240);
-  /* Metallic border */
-  --input: oklch(1 0 0);
-  --ring: oklch(0.55 0.15 240);
-  --chart-1: oklch(0.55 0.15 240);
-  --chart-2: oklch(0.65 0.12 180);
-  --chart-3: oklch(0.6 0.15 140);
-  --chart-4: oklch(0.7 0.1 60);
-  --chart-5: oklch(0.5 0.18 320);
+  --primary: #0062cc;
+  --primary-foreground: #ffffff;
+  --secondary: #e2e8f0;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #bae6fd;
+  --accent-foreground: #0f172a;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #cbd5e1;
+  --input: #e2e8f0;
+  --ring: #3b82f6;
+  --chart-1: #3b82f6;
+  --chart-2: #14b8a6;
+  --chart-3: #22c55e;
+  --chart-4: #eab308;
+  --chart-5: #d946ef;
   --radius: 0.3rem;
-  /* Windows 7 was less rounded than modern mobile UI */
-  --sidebar: oklch(0.92 0.02 240);
-  --sidebar-foreground: oklch(0.15 0.02 240);
-  --sidebar-primary: oklch(0.55 0.15 240);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.88 0.05 240);
-  --sidebar-accent-foreground: oklch(0.15 0.02 240);
-  --sidebar-border: oklch(0.8 0.02 240);
-  --sidebar-ring: oklch(0.55 0.15 240);
+  --sidebar: #f8fafc;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #3b82f6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e2e8f0;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #cbd5e1;
+  --sidebar-ring: #3b82f6;
 }
 
 .dark {
-  --background: oklch(0.12 0.02 258);
-  --foreground: oklch(0.98 0.005 106);
-  --card: oklch(0.15 0.02 258);
-  --card-foreground: oklch(0.98 0.005 106);
-  --popover: oklch(0.15 0.02 258);
-  --popover-foreground: oklch(0.98 0.005 106);
-  --primary: oklch(0.65 0.2 258);
-  --primary-foreground: oklch(0.12 0.02 258);
-  --secondary: oklch(0.22 0.03 258);
-  --secondary-foreground: oklch(0.98 0.005 106);
-  --muted: oklch(0.22 0.03 258);
-  --muted-foreground: oklch(0.6 0.02 258);
-  --accent: oklch(0.25 0.04 180);
-  --accent-foreground: oklch(0.98 0.005 106);
-  --destructive: oklch(0.5 0.2 27);
-  --destructive-foreground: oklch(0.98 0.005 106);
-  --border: oklch(0.25 0.03 258);
-  --input: oklch(0.25 0.03 258);
-  --ring: oklch(0.65 0.2 258);
-  --chart-1: oklch(0.6 0.22 258);
-  --chart-2: oklch(0.7 0.18 180);
-  --chart-3: oklch(0.65 0.2 140);
-  --chart-4: oklch(0.75 0.15 60);
-  --chart-5: oklch(0.55 0.24 320);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --background: #020617;
+  --foreground: #f8fafc;
+  --card: #0f172a;
+  --card-foreground: #f8fafc;
+  --popover: #0f172a;
+  --popover-foreground: #f8fafc;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: #1e293b;
+  --secondary-foreground: #f8fafc;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #0f766e;
+  --accent-foreground: #f8fafc;
+  --destructive: #7f1d1d;
+  --destructive-foreground: #f8fafc;
+  --border: #334155;
+  --input: #334155;
+  --ring: #3b82f6;
+  --chart-1: #3b82f6;
+  --chart-2: #14b8a6;
+  --chart-3: #22c55e;
+  --chart-4: #eab308;
+  --chart-5: #d946ef;
+  --sidebar: #0f172a;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #3b82f6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1e293b;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: #334155;
+  --sidebar-ring: #3b82f6;
 }
 
 @theme inline {
@@ -126,6 +119,8 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 
   body {

@@ -1,0 +1,105 @@
+/* Aero Premium Theme - Hybrid Win7/8/11 */
+
+.aero-glass {
+    background: rgba(255, 255, 255, 0.95) !important;
+    /* backdrop-filter: blur(16px) saturate(200%);
+    -webkit-backdrop-filter: blur(16px) saturate(200%); */
+    border: 1.5px solid rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 10px 40px -10px rgba(0, 98, 204, 0.2);
+}
+
+.dark .aero-glass {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.aero-card {
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.aero-card:hover {
+    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.25);
+    transform: translateY(-2px);
+}
+
+.aero-header {
+    background: linear-gradient(135deg, #0062cc 0%, #004a99 100%);
+    color: white;
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.aero-button-primary {
+    background: linear-gradient(180deg, #0080ff 0%, #0062cc 100%);
+    border: 1px solid #0055aa;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
+    color: white;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.aero-button-primary:hover {
+    background: linear-gradient(180deg, #3399ff 0%, #0080ff 100%);
+    box-shadow: 0 4px 15px rgba(0, 98, 204, 0.4);
+    transform: scale(1.02);
+}
+
+.aero-input {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid #cbd5e1 !important;
+    transition: all 0.2s ease;
+}
+
+.aero-input:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25) !important;
+    background: #fff !important;
+}
+
+.aero-step-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 9999px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.aero-step-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #cbd5e1;
+    transition: all 0.3s ease;
+}
+
+.aero-step-dot.active {
+    background: #2563eb;
+    box-shadow: 0 0 10px rgba(37, 99, 235, 0.5);
+    width: 24px;
+    border-radius: 5px;
+}
+
+/* Animations */
+@keyframes fadeInSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-aero {
+    animation: fadeInSlideUp 0.5s ease-out forwards;
+}
+
+.glass-accent {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(37, 99, 235, 0) 100%);
+}

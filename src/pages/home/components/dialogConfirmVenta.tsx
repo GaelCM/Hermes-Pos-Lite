@@ -32,11 +32,19 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
     const carritoActual = getCarritoActivo();
     const totalVenta = redondearPrecio(getTotalPrice());
     const [cambioEfectivo, setCambioEfectivo] = useState(0);
-    const turnoDataString = localStorage.getItem("openCaja") || "{}";
-    const turnoData = JSON.parse(turnoDataString);
     const isOnline = useOnlineStatus();
-    const [modoTurbo, setModoTurbo] = useState(() => localStorage.getItem("modo_turbo") === "true");
+    const [modoTurbo, setModoTurbo] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+
+    useEffect(() => {
+        const loadModoTurbo = async () => {
+            // @ts-ignore
+            const api = window["electron-api"];
+            const val = await api?.getConfig("modo_turbo");
+            setModoTurbo(val === true);
+        };
+        loadModoTurbo();
+    }, []);
 
     useHotkeys("f1", () => {
         nuevaVenta(true);
@@ -94,6 +102,12 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
 
         setEstado("Cargando");
         try {
+            // @ts-ignore
+            const api = window["electron-api"];
+            const turnoStore = await api?.getConfig("open_caja");
+            const turnoLocal = JSON.parse(localStorage.getItem("openCaja") || "{}");
+            const finalTurno = turnoStore || turnoLocal;
+
             const ventaFinal = {
                 id_usuario: user.id_usuario,
                 usuario: user.usuario,
@@ -102,8 +116,11 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                 metodo_pago: metodoPago,
                 productos: getCarritoActivo()?.productos || [],
                 id_cliente: carritoActual?.cliente?.id_cliente.toLocaleString() || "",
-                id_turno: turnoData.id_turno
+                id_turno: finalTurno?.id_turno
             };
+
+            const printerName = await api?.getConfig("printer_device");
+            const printerCut = (await api?.getConfig("printer_cut")) !== false;
 
             if (!isOnline || modoTurbo) {
                 // @ts-ignore
@@ -112,7 +129,6 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                     toast.success('Venta guardada localmente (Modo Offline)');
 
                     try {
-                        const printerName = localStorage.getItem("printer_device");
                         if (printerName) {
                             if (isImprimir || metodoPago === 2) {
                                 const ticketData = {
@@ -134,9 +150,9 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                                     pagoCon: cambioEfectivo,
                                     cambio: Math.max(0, cambioEfectivo - totalVenta),
                                     ahorro: redondearPrecio(carritoActual?.productos?.reduce((acc: number, p: any) => acc + (p.usarPrecioMayoreo ? (p.product.precio_venta - p.product.precio_mayoreo) * p.quantity : 0), 0) || 0),
-                                    turno: turnoData?.id_turno || "0",
+                                    turno: finalTurno?.id_turno || "0",
                                     metodo_pago: metodoPago,
-                                    cortar: localStorage.getItem("printer_cut") !== "false"
+                                    cortar: printerCut
                                 };
                                 // @ts-ignore
                                 await window["electron-api"]?.printTicketVentaEscPos(ticketData);
@@ -159,7 +175,6 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
             if (res?.success) {
                 toast.success('Venta generada correctamente');
                 try {
-                    const printerName = localStorage.getItem("printer_device");
                     if (printerName) {
                         if (isImprimir || metodoPago === 2) {
                             const ticketData = {
@@ -181,9 +196,9 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                                 pagoCon: cambioEfectivo,
                                 cambio: Math.max(0, cambioEfectivo - totalVenta),
                                 ahorro: redondearPrecio(carritoActual?.productos?.reduce((acc: number, p: any) => acc + (p.usarPrecioMayoreo ? (p.product.precio_venta - p.product.precio_mayoreo) * p.quantity : 0), 0) || 0),
-                                turno: turnoData?.id_turno || "0",
+                                turno: finalTurno?.id_turno || "0",
                                 metodo_pago: metodoPago,
-                                cortar: localStorage.getItem("printer_cut") !== "false"
+                                cortar: printerCut
                             };
                             // @ts-ignore
                             await window["electron-api"]?.printTicketVentaEscPos(ticketData);
@@ -244,8 +259,11 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                                 id="modo-turbo"
                                 checked={modoTurbo}
                                 className="scale-75"
-                                onCheckedChange={(val) => {
+                                onCheckedChange={async (val) => {
                                     setModoTurbo(val);
+                                    // @ts-ignore
+                                    const api = window["electron-api"];
+                                    await api?.setConfig("modo_turbo", val);
                                     localStorage.setItem("modo_turbo", val.toString());
                                 }}
                             />

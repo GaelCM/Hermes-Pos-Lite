@@ -7,7 +7,7 @@ import * as z from "zod";
 import { createCliente } from "@/api/clientesApi/clientesApi";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Loader2, UserPlus, Phone, MapPin, CheckCircle2 } from "lucide-react";
+import { Loader2, UserPlus, Phone, MapPin } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import "./create-cliente-dialog.css";
 

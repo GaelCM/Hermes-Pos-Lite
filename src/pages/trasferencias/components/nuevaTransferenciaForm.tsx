@@ -21,7 +21,7 @@ import {
   ClipboardList,
   PackageCheck,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { format } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import { toast } from "sonner";
@@ -32,6 +32,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import "../transferencias.css";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router";
 
 const transferSchema = z.object({
   origen: z.string().min(1, "La sucursal de origen es obligatoria"),
@@ -50,6 +51,7 @@ export default function CrearTransferencia() {
   const [sucursalLista, setSucursalLista] = useState<Sucursal[]>([]);
   const [productosLista, setProductosLista] = useState<ProductoVenta[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   const {
     control,
@@ -86,9 +88,15 @@ export default function CrearTransferencia() {
       .catch((err) => console.error("Error al cargar sucursales", err));
   }, []);
 
+  const isInitialMount = useRef(true);
+
   useEffect(() => {
     let mounted = true;
-    clearCart();
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+    } else {
+      clearCart();
+    }
     setProductosLista([]);
 
     const fetchProductos = async () => {
@@ -163,6 +171,7 @@ export default function CrearTransferencia() {
           motivo: "",
         });
         clearCart();
+        navigate("/transferencias");
       } else {
         toast.error("Error en la transferencia", {
           description: res.message || "No se pudo procesar la solicitud.",

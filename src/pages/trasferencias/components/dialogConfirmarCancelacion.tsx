@@ -1,13 +1,5 @@
-import { Button } from "@/components/ui/button";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
 import { AlertTriangle } from "lucide-react";
+import "./dialogTransferencias.css";
 
 interface DialogConfirmarCancelacionProps {
     isOpen: boolean;
@@ -24,53 +16,63 @@ export default function DialogConfirmarCancelacion({
     idTransferencia,
     loading = false,
 }: DialogConfirmarCancelacionProps) {
-    return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                    <div className="flex items-center gap-2 mb-2">
-                        <div className="bg-red-100 p-2 rounded-full">
-                            <AlertTriangle className="h-6 w-6 text-red-600" />
-                        </div>
-                        <DialogTitle className="text-xl text-red-700">Confirmar Cancelación</DialogTitle>
-                    </div>
-                    <DialogDescription className="text-gray-600 text-base py-2">
-                        ¿Estás seguro de que deseas cancelar la <strong>Transferencia #{idTransferencia}</strong>?
-                    </DialogDescription>
-                </DialogHeader>
+    if (!isOpen) return null;
 
-                <div className="bg-amber-50 border-l-4 border-amber-400 p-4 my-2">
-                    <p className="text-sm text-amber-700">
-                        <strong>Atención:</strong> Si la transferencia ya fue enviada, el stock se devolverá automáticamente a la sucursal de origen. Esta acción no se puede deshacer.
-                    </p>
+    return (
+        <div className="dtf-overlay" onClick={() => !loading && setIsOpen(false)}>
+            <div className="dtf-dialog dtf-dialog-sm" onClick={(e) => e.stopPropagation()}>
+
+                {/* Header */}
+                <div className="dtf-header">
+                    <div className="dtf-header-row">
+                        <div className="dtf-icon-wrap red">
+                            <AlertTriangle size={20} color="#dc2626" />
+                        </div>
+                        <div>
+                            <div className="dtf-title red">Confirmar Cancelación</div>
+                        </div>
+                    </div>
+                    <div className="dtf-desc">
+                        ¿Estás seguro de que deseas cancelar la <strong>Transferencia #{idTransferencia}</strong>?
+                    </div>
                 </div>
 
-                <DialogFooter className="mt-6 flex-col sm:flex-row gap-2">
-                    <Button
-                        variant="outline"
+                {/* Body */}
+                <div className="dtf-body">
+                    <div className="dtf-warning">
+                        <p>
+                            <strong>Atención:</strong> Si la transferencia ya fue enviada, el stock se devolverá
+                            automáticamente a la sucursal de origen. Esta acción no se puede deshacer.
+                        </p>
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="dtf-footer">
+                    <button
+                        className="dtf-btn dtf-btn-outline"
                         onClick={() => setIsOpen(false)}
                         disabled={loading}
-                        className="w-full sm:w-auto"
                     >
                         No, volver
-                    </Button>
-                    <Button
-                        variant="destructive"
+                    </button>
+                    <button
+                        className="dtf-btn dtf-btn-red"
                         onClick={onConfirm}
                         disabled={loading}
-                        className="w-full sm:w-auto bg-red-600 hover:bg-red-700"
                     >
                         {loading ? (
                             <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                <div className="dtf-spinner" style={{ width: 18, height: 18, borderWidth: 3 }} />
                                 Cancelando...
                             </>
                         ) : (
                             "Sí, cancelar transferencia"
                         )}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                    </button>
+                </div>
+
+            </div>
+        </div>
     );
 }

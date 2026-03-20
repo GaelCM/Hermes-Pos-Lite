@@ -4,7 +4,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 
 import { useListaProductos } from "@/contexts/listaProductos";
-import { CreditCard, Minus, Pill, Plus, RefreshCw, Scan, ShoppingCart, Trash2, Users, X } from "lucide-react";
+import { ArrowRightLeft, CreditCard, Minus, Pill, Plus, RefreshCw, Scan, ShoppingCart, Trash2, Users, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { Reloj } from "./components/reloj";
@@ -12,7 +12,7 @@ import DialogConfirmVenta from "./components/dialogConfirmVenta";
 import AddCliente from "@/components/dialogAddCliente";
 import { getProductoVenta } from "@/api/productosApi/productosApi";
 import DialiogErrorProducto from "./Dialogs/noEncontrado";
-import { useOutletContext } from "react-router";
+import { useOutletContext, useNavigate } from "react-router";
 import CarritoTabs from "@/components/carritoTabs";
 import { useCurrentUser } from "@/contexts/currentUser";
 import { useOnlineStatus } from "@/hooks/isOnline";
@@ -22,6 +22,7 @@ import DialogNuevoProductoTemp from "./components/dialogNuevoProductoTemp";
 import DialogSetGranel from "./components/dialogSetGranel";
 import type { ProductoVenta } from "@/types/Producto";
 import { redondearPrecio } from "@/lib/utils";
+import { usePendingTransfers } from "@/hooks/usePendingTransfers";
 import "./caja.css";
 
 
@@ -35,6 +36,7 @@ export default function Home() {
     const [error, setError] = useState(false);
     const [pendingCount, setPendingCount] = useState(0);
     const [openNuevoProducto, setOpenNuevoProducto] = useState(false);
+    const pendingTransfers = usePendingTransfers();
 
     // Estados para Granel
     const [openGranel, setOpenGranel] = useState(false);
@@ -42,6 +44,7 @@ export default function Home() {
 
     const { clearCart, removeProduct, decrementQuantity, incrementQuantity, getTotalPrice, addProduct, getCarritoActivo, crearCarrito, carritoActivo, togglePrecioMayoreo, asignarClienteCarrito, desasignarClienteCarrito } = useListaProductos();
     const { setFocusScanner } = useOutletContext<{ setFocusScanner: (fn: () => void) => void }>();
+    const navigate = useNavigate();
 
     const carritoActual = getCarritoActivo();
 
@@ -497,6 +500,19 @@ export default function Home() {
             <div className="caja-right-column">
                 {/* Datos de la venta */}
                 <div className="xl:sticky xl:top-6 space-y-3">
+                    {pendingTransfers > 0 && (
+                        <Button
+                            className="w-full h-9 btn-transfer-alert uppercase font-black cursor-pointer"
+                            onClick={() => navigate("/transferencias")}
+                        >
+                            <ArrowRightLeft className="w-4 h-4 mr-2" />
+                            {pendingTransfers} Transferencia{pendingTransfers > 1 ? 's' : ''} pendiente{pendingTransfers > 1 ? 's' : ''}
+
+                            {/* Punto rojo animado en el vértice */}
+                            <div className="dot-pulse-alert" />
+                            <div className="dot-transfer-alert" />
+                        </Button>
+                    )}
                     <div className="aero-card">
                         <div className="px-4 py-3 border-b border-primary/10">
                             <div className="flex items-center gap-2 text-primary font-bold">

@@ -109,9 +109,26 @@ export default function EstadoCuentaCliente() {
         setAccionLoading(true);
         setAccionMsg(null);
         try {
-            const turnoDataString = localStorage.getItem("openCaja") || "{}";
-            const turnoData = JSON.parse(turnoDataString);
-            const id_turno = turnoData.id_turno;
+            // @ts-ignore
+            const api = window["electron-api"];
+            const storeTurno = await api?.getConfig("open_caja");
+            let id_turno: number | null = null;
+            if (storeTurno) {
+                id_turno = typeof storeTurno === 'number' ? storeTurno : (storeTurno.id_turno || storeTurno.id);
+            }
+
+            if (!id_turno) {
+                // Fallback a localStorage
+                const localTurno = localStorage.getItem("openCaja");
+                if (localTurno) {
+                    try {
+                        const parsed = JSON.parse(localTurno);
+                        id_turno = typeof parsed === 'number' ? parsed : (parsed.id_turno || parsed.id);
+                    } catch (e) {
+                        if (!isNaN(Number(localTurno))) id_turno = Number(localTurno);
+                    }
+                }
+            }
 
             if (!id_turno) {
                 setAccionMsg({ tipo: "error", texto: "No hay un turno de caja abierto." });
@@ -124,7 +141,7 @@ export default function EstadoCuentaCliente() {
                 monto,
                 id_usuario: user.id_usuario,
                 id_sucursal: user.id_sucursal,
-                id_turno: id_turno,
+                id_turno: id_turno!,
                 concepto: conceptoAbono || "Abono a cuenta",
             });
             if (!res.success) throw new Error(res.message);
@@ -132,8 +149,9 @@ export default function EstadoCuentaCliente() {
 
             // --- INICIO LÓGICA DE IMPRESIÓN ---
             try {
-                const printerName = localStorage.getItem("printer_device");
+                const printerName = await api?.getConfig("printer_device");
                 if (printerName) {
+                    const printerCut = (await api?.getConfig("printer_cut")) !== false;
                     const ticketData = {
                         printerName,
                         sucursal: "Sucursal " + user.sucursal,
@@ -145,10 +163,10 @@ export default function EstadoCuentaCliente() {
                         saldoNuevo: res.data.saldo_nuevo,
                         concepto: conceptoAbono || "Abono a cuenta",
                         tipo: "ABONO",
-                        cortar: localStorage.getItem("printer_cut") !== "false"
+                        cortar: printerCut
                     };
                     // @ts-ignore
-                    await window["electron-api"]?.printTicketAbonoEscPos(ticketData);
+                    await api?.printTicketAbonoEscPos(ticketData);
                 }
             } catch (printError) {
                 console.error("Error al imprimir ticket de abono:", printError);
@@ -171,9 +189,26 @@ export default function EstadoCuentaCliente() {
         setAccionLoading(true);
         setAccionMsg(null);
         try {
-            const turnoDataString = localStorage.getItem("openCaja") || "{}";
-            const turnoData = JSON.parse(turnoDataString);
-            const id_turno = turnoData.id_turno;
+            // @ts-ignore
+            const api = window["electron-api"];
+            const storeTurno = await api?.getConfig("open_caja");
+            let id_turno: number | null = null;
+            if (storeTurno) {
+                id_turno = typeof storeTurno === 'number' ? storeTurno : (storeTurno.id_turno || storeTurno.id);
+            }
+
+            if (!id_turno) {
+                // Fallback a localStorage
+                const localTurno = localStorage.getItem("openCaja");
+                if (localTurno) {
+                    try {
+                        const parsed = JSON.parse(localTurno);
+                        id_turno = typeof parsed === 'number' ? parsed : (parsed.id_turno || parsed.id);
+                    } catch (e) {
+                        if (!isNaN(Number(localTurno))) id_turno = Number(localTurno);
+                    }
+                }
+            }
 
             if (!id_turno) {
                 setAccionMsg({ tipo: "error", texto: "No hay un turno de caja abierto." });
@@ -185,15 +220,16 @@ export default function EstadoCuentaCliente() {
                 id_cliente: Number(id_cliente),
                 id_usuario: user.id_usuario,
                 id_sucursal: user.id_sucursal,
-                id_turno: id_turno,
+                id_turno: id_turno!,
             });
             if (!res.success) throw new Error(res.message);
             setAccionMsg({ tipo: "ok", texto: `Deuda de $${res.data.monto_liquidado.toFixed(2)} liquidada completamente ✓` });
 
             // --- INICIO LÓGICA DE IMPRESIÓN ---
             try {
-                const printerName = localStorage.getItem("printer_device");
+                const printerName = await api?.getConfig("printer_device");
                 if (printerName) {
+                    const printerCut = (await api?.getConfig("printer_cut")) !== false;
                     const ticketData = {
                         printerName,
                         sucursal: "Sucursal " + user.sucursal,
@@ -205,10 +241,10 @@ export default function EstadoCuentaCliente() {
                         saldoNuevo: 0,
                         concepto: "LIQUIDACION TOTAL DE DEUDA",
                         tipo: "LIQUIDACION",
-                        cortar: localStorage.getItem("printer_cut") !== "false"
+                        cortar: printerCut
                     };
                     // @ts-ignore
-                    await window["electron-api"]?.printTicketAbonoEscPos(ticketData);
+                    await api?.printTicketAbonoEscPos(ticketData);
                 }
             } catch (printError) {
                 console.error("Error al imprimir ticket de liquidación:", printError);

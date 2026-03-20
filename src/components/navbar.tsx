@@ -5,6 +5,7 @@ import { Link, Outlet, useNavigate } from "react-router";
 import { useCurrentUser } from "@/contexts/currentUser";
 import { useHotkeys } from "react-hotkeys-hook";
 import { useState } from "react";
+import { useOnlineStatus } from "@/hooks/isOnline";
 import DialogProducto from "./dialogProductos";
 import "./navbar.css";
 
@@ -18,6 +19,7 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
   const [openP, setOpenP] = useState(false);
   const [focusScanner, setFocusScanner] = useState<() => void>(() => { });
   const navigate = useNavigate();
+  const isOnline = useOnlineStatus();
 
   const openDialog = () => { setOpenP(true) }
   const moverAInventario = () => { navigate("/productos") }
@@ -59,9 +61,9 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
               Buscar Producto (F10)
             </button>
 
-            <div className="status-badge">
-              <div className="status-dot pulse" />
-              ONLINE
+            <div className={`status-badge ${isOnline ? 'status-online' : 'status-offline'}`}>
+              <div className={`status-dot ${isOnline ? 'pulse' : ''}`} />
+              {isOnline ? 'ONLINE' : 'OFFLINE'}
             </div>
 
             {user?.id_rol === 1 && (

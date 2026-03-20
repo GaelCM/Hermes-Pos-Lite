@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { Search, UserPlus, Check, Phone, MapPin, Hash, RefreshCcw, Plus } from "lucide-react";
+import { Search, UserPlus, Check, Phone, MapPin, RefreshCcw, Plus } from "lucide-react";
 import { useCliente } from "@/contexts/globalClient";
 import { getClientes } from "@/api/clientesApi/clientesApi";
 import { toast } from "sonner";
@@ -150,7 +150,7 @@ export default function AddCliente({ isOpen, setIsOpen, inputRef, onSelect }: pr
             </div>
           </DialogHeader>
 
-          <div className="px-6 py-4 border-b bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+          <div className="px-6 py-4 border-b bg-white sticky top-0 z-10">
             <div className="relative group">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-blue-500 transition-colors" />
               <Input
@@ -215,7 +215,7 @@ export default function AddCliente({ isOpen, setIsOpen, inputRef, onSelect }: pr
                       </div>
 
                       <div className={`ml-4 transition-all ${index === selectedIndex ? 'scale-100 opacity-100' : 'scale-75 opacity-0'}`}>
-                        <div className="bg-white/20 p-2 rounded-full border border-white/30 backdrop-blur-sm">
+                        <div className="bg-white/20 p-2 rounded-full border border-white/30">
                           <Check className="w-5 h-5 text-white" />
                         </div>
                       </div>

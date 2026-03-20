@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCurrentUser } from "@/contexts/currentUser";
 import type { Sucursal } from "@/types/Sucursal";
-import { ArrowRight, Building2, MapPin, Package, Layers, Cuboid, DollarSign, AlertCircle } from "lucide-react";
+import { ArrowRight, Building2, MapPin, Package, AlertCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import "./productos-page.css";

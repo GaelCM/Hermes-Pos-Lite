@@ -21,6 +21,12 @@ export default function DialogProducto({ isOpen, setIsOpen, idSucursal, inputRef
                 className="
                     p-0 
                     overflow-hidden 
+                    /* DISABLE ANIMATIONS FOR CPU PERFORMANCE */
+                    /* VELOCIDAD PURA: Sin animaciones */
+                    duration-0
+                    animate-none
+                    data-[state=open]:animate-none 
+                    data-[state=closed]:animate-none
 
                     /* WEB */
                     md:max-w-[1200px] 

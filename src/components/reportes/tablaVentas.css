@@ -1,0 +1,546 @@
+/* ========== tablaVentas.css ========== */
+/* CSS puro - Compatible con Windows 7 / Chrome antiguo */
+
+/* --- KPIs wrapper --- */
+.tv-kpi-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.tv-kpi-card {
+    flex: 1 1 180px;
+    background: #ffffff;
+    border: 3px solid #111111;
+    border-radius: 10px;
+    box-shadow: 4px 4px 0px #111111;
+    overflow: hidden;
+    transition: transform 0.15s ease;
+}
+
+.tv-kpi-card:hover {
+    transform: translateY(-3px);
+}
+
+.tv-kpi-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 3px solid #111111;
+}
+
+.tv-kpi-header.blue {
+    background: #dbeafe;
+}
+
+.tv-kpi-header.green {
+    background: #dcfce7;
+}
+
+.tv-kpi-header.purple {
+    background: #f3e8ff;
+}
+
+.tv-kpi-header.amber {
+    background: #fef9c3;
+}
+
+.tv-kpi-title {
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #111111;
+}
+
+.tv-kpi-icon {
+    padding: 6px;
+    border-radius: 6px;
+    border: 2px solid #111111;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tv-kpi-icon.blue {
+    background: #bfdbfe;
+}
+
+.tv-kpi-icon.green {
+    background: #bbf7d0;
+}
+
+.tv-kpi-icon.purple {
+    background: #e9d5ff;
+}
+
+.tv-kpi-icon.amber {
+    background: #fde68a;
+}
+
+.tv-kpi-body {
+    padding: 14px 16px 16px;
+}
+
+.tv-kpi-value {
+    font-size: 28px;
+    font-weight: 900;
+    color: #111111;
+    line-height: 1;
+}
+
+.tv-kpi-value.blue {
+    color: #1d4ed8;
+}
+
+.tv-kpi-value.green {
+    color: #15803d;
+}
+
+.tv-kpi-value.purple {
+    color: #7e22ce;
+}
+
+.tv-kpi-value.amber {
+    color: #b45309;
+}
+
+.tv-kpi-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #4b5563;
+    text-transform: uppercase;
+    margin-top: 4px;
+}
+
+/* --- Main Table Card --- */
+.tv-card {
+    background: #ffffff;
+    border: 3px solid #111111;
+    border-radius: 12px;
+    box-shadow: 5px 5px 0px #111111;
+    overflow: hidden;
+}
+
+.tv-card-header {
+    background: #f3f4f6;
+    border-bottom: 3px solid #111111;
+    padding: 20px 24px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.tv-card-title {
+    font-size: 20px;
+    font-weight: 900;
+    color: #111111;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tv-card-desc {
+    font-size: 11px;
+    font-weight: 700;
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 4px;
+}
+
+.tv-search-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 320px;
+}
+
+.tv-search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #374151;
+}
+
+.tv-search-input {
+    width: 100%;
+    height: 48px;
+    padding: 0 16px 0 42px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #111111;
+    background: #ffffff;
+    border: 2px solid #111111;
+    border-radius: 8px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.tv-search-input::placeholder {
+    color: #9ca3af;
+}
+
+.tv-search-input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px #bfdbfe;
+}
+
+/* --- Table --- */
+.tv-table-wrap {
+    overflow-x: auto;
+}
+
+.tv-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.tv-table thead tr {
+    background: #e5e7eb;
+    border-bottom: 3px solid #111111;
+}
+
+.tv-table th {
+    padding: 14px 10px;
+    font-size: 12px;
+    font-weight: 900;
+    color: #111111;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+}
+
+.tv-table th:hover {
+    background: #d1d5db;
+}
+
+.tv-table th.text-right {
+    text-align: right;
+}
+
+.tv-table th.text-center {
+    text-align: center;
+}
+
+.tv-table tbody tr {
+    border-bottom: 1px solid #d1d5db;
+    transition: background 0.1s ease;
+    cursor: pointer;
+}
+
+.tv-table tbody tr:hover {
+    background: #f3f4f6;
+}
+
+.tv-table tbody tr.tv-row-selected {
+    background: #dbeafe;
+    border-left: 6px solid #2563eb;
+}
+
+.tv-table td {
+    padding: 12px 10px;
+    color: #111111;
+    font-weight: 700;
+    vertical-align: middle;
+}
+
+.tv-table td.text-right {
+    text-align: right;
+}
+
+.tv-table td.text-center {
+    text-align: center;
+}
+
+/* --- Celda ID venta --- */
+.tv-id-badge {
+    display: inline-block;
+    background: #dbeafe;
+    color: #1e40af;
+    border: 2px solid #1e40af;
+    border-radius: 6px;
+    padding: 2px 10px;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+/* --- Fecha y hora --- */
+.tv-date {
+    font-size: 13px;
+    font-weight: 900;
+    color: #111111;
+    text-transform: uppercase;
+}
+
+.tv-time {
+    font-size: 11px;
+    font-weight: 700;
+    color: #4b5563;
+}
+
+/* --- Monto --- */
+.tv-amount {
+    font-size: 15px;
+    font-weight: 900;
+    color: #15803d;
+}
+
+/* --- Badges genéricos --- */
+.tv-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    border: 2px solid #111111;
+    white-space: nowrap;
+}
+
+.tv-badge-neutral {
+    background: #f3f4f6;
+    color: #111111;
+    border-color: #374151;
+}
+
+.tv-badge-completada {
+    background: #dcfce7;
+    color: #14532d;
+    border-color: #166534;
+}
+
+.tv-badge-cancelada {
+    background: #fee2e2;
+    color: #7f1d1d;
+    border-color: #991b1b;
+}
+
+.tv-badge-pendiente {
+    background: #fef9c3;
+    color: #713f12;
+    border-color: #854d0e;
+}
+
+/* --- Botones acción --- */
+.tv-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    border-radius: 6px;
+    border: 2px solid #111111;
+    cursor: pointer;
+    transition: filter 0.1s ease, transform 0.1s ease;
+}
+
+.tv-btn:active {
+    transform: translateY(2px);
+}
+
+.tv-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.tv-btn-view {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #1e3a8a;
+}
+
+.tv-btn-view:hover {
+    background: #1d4ed8;
+}
+
+.tv-btn-cancel {
+    background: #dc2626;
+    color: #ffffff;
+    border-color: #7f1d1d;
+}
+
+.tv-btn-cancel:hover {
+    background: #b91c1c;
+}
+
+.tv-btn-expand {
+    background: #ffffff;
+    color: #111111;
+    border: 2px solid #111111;
+    border-radius: 4px;
+    padding: 3px 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tv-btn-expand:hover {
+    background: #e5e7eb;
+}
+
+/* --- Fila expandida --- */
+.tv-expand-row td {
+    padding: 0;
+}
+
+.tv-expand-panel {
+    background: #f9fafb;
+    border-top: 3px solid #111111;
+    padding: 28px;
+}
+
+.tv-expand-title {
+    font-size: 18px;
+    font-weight: 900;
+    color: #111111;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.tv-expand-divider {
+    height: 3px;
+    background: #111111;
+    margin-bottom: 20px;
+}
+
+.tv-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px;
+}
+
+.tv-detail-item {
+    background: #ffffff;
+    border: 2px solid #111111;
+    border-radius: 8px;
+    padding: 14px;
+}
+
+.tv-detail-label {
+    font-size: 10px;
+    font-weight: 900;
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 6px;
+}
+
+.tv-detail-value {
+    font-size: 16px;
+    font-weight: 900;
+    color: #111111;
+    word-break: break-all;
+}
+
+.tv-detail-value.amount {
+    color: #15803d;
+}
+
+.tv-detail-value.small {
+    font-size: 13px;
+}
+
+.tv-detail-subvalue {
+    font-size: 11px;
+    font-weight: 700;
+    color: #4b5563;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    text-transform: uppercase;
+}
+
+/* --- Empty / Loading states --- */
+.tv-empty {
+    text-align: center;
+    padding: 80px 20px;
+    background: #ffffff;
+    border: 3px dashed #374151;
+    border-radius: 12px;
+}
+
+.tv-empty-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 20px;
+    background: #f3f4f6;
+    border: 2px solid #374151;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tv-empty-title {
+    font-size: 18px;
+    font-weight: 900;
+    color: #111111;
+    text-transform: uppercase;
+}
+
+.tv-empty-desc {
+    font-size: 13px;
+    font-weight: 700;
+    color: #4b5563;
+    margin-top: 6px;
+}
+
+.tv-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    gap: 16px;
+}
+
+.tv-spinner {
+    width: 48px;
+    height: 48px;
+    border: 5px solid #d1d5db;
+    border-top-color: #2563eb;
+    border-radius: 50%;
+    animation: tv-spin 0.7s linear infinite;
+}
+
+@keyframes tv-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.tv-loading p {
+    font-size: 14px;
+    font-weight: 900;
+    color: #374151;
+    text-transform: uppercase;
+}
+
+/* --- Texto truncado --- */
+.tv-truncate {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+}

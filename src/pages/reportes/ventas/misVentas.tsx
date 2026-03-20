@@ -26,7 +26,18 @@ export default function MisVentasReport() {
     const [soloTurnoActual, setSoloTurnoActual] = useState(false);
     const { user } = useCurrentUser();
 
-    const hasOpenCaja = !!localStorage.getItem("openCaja");
+    const [hasOpenCaja, setHasOpenCaja] = useState(false);
+
+    useEffect(() => {
+        const checkOpenCaja = async () => {
+            // @ts-ignore
+            const api = window["electron-api"];
+            const storeTurno = await api?.getConfig("open_caja");
+            const localTurno = localStorage.getItem("openCaja");
+            setHasOpenCaja(storeTurno != null || localTurno != null);
+        };
+        checkOpenCaja();
+    }, []);
 
     const obtenerMisVentas = async () => {
         setLoading(true);
@@ -36,10 +47,23 @@ export default function MisVentasReport() {
 
             // Si el usuario quiere filtrar por turno y hay una caja abierta
             if (soloTurnoActual) {
-                const turnoDataString = localStorage.getItem("openCaja");
-                if (turnoDataString) {
-                    const data = JSON.parse(turnoDataString);
-                    idTurno = data.id_turno;
+                // @ts-ignore
+                const api = window["electron-api"];
+                const storeTurno = await api?.getConfig("open_caja");
+                if (storeTurno) {
+                    idTurno = typeof storeTurno === 'number' ? storeTurno : (storeTurno.id_turno || storeTurno.id);
+                }
+
+                if (!idTurno) {
+                    const localTurno = localStorage.getItem("openCaja");
+                    if (localTurno) {
+                        try {
+                            const parsed = JSON.parse(localTurno);
+                            idTurno = typeof parsed === 'number' ? parsed : (parsed.id_turno || parsed.id);
+                        } catch (e) {
+                            if (!isNaN(Number(localTurno))) idTurno = Number(localTurno);
+                        }
+                    }
                 }
             }
 
@@ -69,33 +93,32 @@ export default function MisVentasReport() {
     }, [fechaDesde, fechaHasta, soloTurnoActual])
 
     return (
-        <div className="container mx-auto py-8 px-4 space-y-6">
+        <div className="container mx-auto py-8 px-4 space-y-6 bg-[#f0f3f9] min-h-screen">
             {/* Header */}
-            <div className="space-y-2">
-                <h1 className="text-4xl text-primary font-bold tracking-tight flex items-center gap-3">
-
+            <div className="space-y-2 pb-4 border-b-2 border-black">
+                <h1 className="text-4xl font-black text-black uppercase tracking-tight flex items-center gap-3">
                     Mis Ventas
                 </h1>
-                <p className="text-muted-foreground text-lg">
+                <p className="text-black font-bold text-lg uppercase tracking-widest">
                     Consulta y analiza tus ventas realizadas
                 </p>
             </div>
 
             {/* Filtros de Fecha */}
-            <Card className="shadow-lg border-2">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Calendar className="h-5 w-5" />
+            <Card className="shadow-xl border-2 border-black bg-white rounded-xl overflow-hidden">
+                <CardHeader className="bg-gray-100 border-b-2 border-black p-6">
+                    <CardTitle className="flex items-center gap-2 text-black font-black uppercase text-xl">
+                        <Calendar className="h-6 w-6" />
                         Filtros de Búsqueda
                     </CardTitle>
-                    <CardDescription>
-                        Selecciona el rango de fechas para consultar las ventas
+                    <CardDescription className="text-black font-bold mt-2">
+                        SELECCIONA EL RANGO DE FECHAS PARA CONSULTAR LAS VENTAS
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6">
                     <div className="flex flex-col md:flex-row gap-6 items-end">
                         <div className="flex-1 space-y-2 w-full">
-                            <Label htmlFor="fecha-desde" className="text-sm font-semibold">
+                            <Label htmlFor="fecha-desde" className="text-sm font-black uppercase text-black">
                                 Fecha Desde
                             </Label>
                             <Input
@@ -103,7 +126,7 @@ export default function MisVentasReport() {
                                 type="date"
                                 value={fechaDesde}
                                 onChange={(e) => setFechaDesde(e.target.value)}
-                                className="w-full"
+                                className="w-full border-2 border-black font-bold text-black h-12"
                             />
                         </div>
 
@@ -112,7 +135,7 @@ export default function MisVentasReport() {
                         </div>
 
                         <div className="flex-1 space-y-2 w-full">
-                            <Label htmlFor="fecha-hasta" className="text-sm font-semibold">
+                            <Label htmlFor="fecha-hasta" className="text-sm font-black uppercase text-black">
                                 Fecha Hasta
                             </Label>
                             <Input
@@ -120,22 +143,23 @@ export default function MisVentasReport() {
                                 type="date"
                                 value={fechaHasta}
                                 onChange={(e) => setFechaHasta(e.target.value)}
-                                className="w-full"
+                                className="w-full border-2 border-black font-bold text-black h-12"
                             />
                         </div>
 
                         {hasOpenCaja && (
-                            <div className="flex items-center space-x-3 pb-3 bg-secondary/30 p-3 rounded-lg border border-primary/20 transition-all hover:bg-secondary/50">
+                            <div className="flex items-center space-x-3 pb-3 bg-gray-100 p-4 rounded-lg border-2 border-black">
                                 <Switch
                                     id="solo-turno"
                                     checked={soloTurnoActual}
                                     onCheckedChange={setSoloTurnoActual}
+                                    className="data-[state=checked]:bg-blue-600"
                                 />
                                 <Label
                                     htmlFor="solo-turno"
-                                    className="text-sm font-medium cursor-pointer flex items-center gap-2 whitespace-nowrap"
+                                    className="text-sm font-black uppercase cursor-pointer flex items-center gap-2 text-black"
                                 >
-                                    <LayoutList className="h-4 w-4 text-primary" />
+                                    <LayoutList className="h-5 w-5 text-black" />
                                     Solo mi turno actual
                                 </Label>
                             </div>
@@ -144,10 +168,10 @@ export default function MisVentasReport() {
                         <Button
                             onClick={obtenerMisVentas}
                             disabled={loading}
-                            className="gap-2 shadow-md hover:shadow-lg transition-all"
+                            className="cursor-pointer"
                             size="lg"
                         >
-                            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
                             Actualizar
                         </Button>
                     </div>

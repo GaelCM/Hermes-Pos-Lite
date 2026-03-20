@@ -1,16 +1,29 @@
 import Bienvenida from "./bienvenida";
 import Caja from "./caja";
-import { useState } from "react";
-
-
+import { useState, useEffect } from "react";
 
 
 export default function Home() {
 
-  const [openCaja, setOpenCaja] = useState<string | null>(() => localStorage.getItem("openCaja"));
+  const [openCaja, setOpenCaja] = useState<string | null>(null);
+
+  const checkCaja = async () => {
+    // @ts-ignore
+    const api = window["electron-api"];
+    const storeTurno = await api?.getConfig("open_caja");
+    if (storeTurno) {
+      setOpenCaja(JSON.stringify(storeTurno));
+    } else {
+      setOpenCaja(localStorage.getItem("openCaja"));
+    }
+  }
+
+  useEffect(() => {
+    checkCaja();
+  }, []);
 
   const handleCajaOpened = () => {
-    setOpenCaja(localStorage.getItem("openCaja"));
+    checkCaja();
   };
 
   return (

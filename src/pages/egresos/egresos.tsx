@@ -13,18 +13,34 @@ export default function EgresosPage() {
     const [turnoId, setTurnoId] = useState<number | null>(null);
 
     useEffect(() => {
-        const turnoDataString = localStorage.getItem("openCaja");
-        if (turnoDataString) {
-            try {
-                const data = JSON.parse(turnoDataString);
-                if (data && data.id_turno) {
-                    setHasTurno(true);
-                    setTurnoId(data.id_turno);
-                }
-            } catch (e) {
-                console.error("Error parsing openCaja", e);
+        const checkTurno = async () => {
+            // @ts-ignore
+            const api = window["electron-api"];
+            const storeTurno = await api?.getConfig("open_caja");
+            let id_turno: number | null = null;
+            if (storeTurno) {
+                id_turno = typeof storeTurno === 'number' ? storeTurno : (storeTurno.id_turno || storeTurno.id);
             }
-        }
+
+            if (!id_turno) {
+                // Fallback a localStorage
+                const localTurno = localStorage.getItem("openCaja");
+                if (localTurno) {
+                    try {
+                        const parsed = JSON.parse(localTurno);
+                        id_turno = typeof parsed === 'number' ? parsed : (parsed.id_turno || parsed.id);
+                    } catch (e) {
+                        if (!isNaN(Number(localTurno))) id_turno = Number(localTurno);
+                    }
+                }
+            }
+
+            if (id_turno) {
+                setHasTurno(true);
+                setTurnoId(id_turno);
+            }
+        };
+        checkTurno();
     }, []);
 
     if (!hasTurno) {

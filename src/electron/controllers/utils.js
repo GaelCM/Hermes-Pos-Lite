@@ -3,6 +3,9 @@ import { exec } from "child_process";
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import Store from 'electron-store';
+
+const store = new Store();
 
 // Helper para enviar datos RAW a la impresora en Windows usando P/Invoke desde PowerShell
 const executeRawPrint = async (printerName, buffer, docName = "Hermes POS Print") => {
@@ -124,6 +127,15 @@ const executeRawPrint = async (printerName, buffer, docName = "Hermes POS Print"
 };
 
 function utilsController() {
+    ipcMain.handle('store-get', (event, key) => {
+        return store.get(key);
+    });
+
+    ipcMain.handle('store-set', (event, key, value) => {
+        store.set(key, value);
+        return true;
+    });
+
     ipcMain.handle('list-prints', async (event) => {
         try {
             return await event.sender.getPrintersAsync();

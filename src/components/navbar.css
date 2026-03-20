@@ -5,7 +5,7 @@
             rgba(255, 255, 255, 0.9) 0%,
             rgba(240, 245, 255, 0.8) 50%,
             rgba(225, 235, 250, 0.9) 100%);
-    backdrop-filter: blur(12px);
+    /* backdrop-filter: blur(12px); */
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     padding: 0.5rem 1.5rem;
@@ -147,6 +147,30 @@
         opacity: 1;
     }
 }
+
+/* --- Estados dinámicos del badge --- */
+.status-badge.status-online {
+    color: #059669;
+    background: #d1fae5;
+    border-color: #6ee7b7;
+}
+
+.status-badge.status-online .status-dot {
+    background-color: #10b981;
+    box-shadow: 0 0 5px #10b981;
+}
+
+.status-badge.status-offline {
+    color: #dc2626;
+    background: #fee2e2;
+    border-color: #fca5a5;
+}
+
+.status-badge.status-offline .status-dot {
+    background-color: #ef4444;
+    box-shadow: 0 0 5px #ef4444;
+}
+
 
 .config-icon-link {
     color: #64748b;
